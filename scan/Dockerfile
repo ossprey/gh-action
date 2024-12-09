@@ -7,10 +7,12 @@ RUN pip install --no-cache-dir poetry
 # Copy files
 COPY scan /app
 
+WORKDIR /app
+RUN find .
+
 # Set the working directory
 WORKDIR /app/scan
 
-RUN find .
 # Install dependencies
 RUN poetry install
 
