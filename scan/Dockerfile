@@ -10,6 +10,7 @@ COPY scan /app
 # Set the working directory
 WORKDIR /app/scan
 
+RUN find .
 # Install dependencies
 RUN poetry install
 
