@@ -1,24 +1,21 @@
-name: Use OSSPREY-Security GitHub Action
+name: Run OSSPREY Scanner
 
 on:
-  workflow_dispatch:
-    inputs:
-      folder_to_scan:
-        description: "Folder to scan"
-        required: true
-        default: "src"
+  push:
+    branches:
+      - main
 
 jobs:
-  run-ossprey-action:
+  run-ossprey-scan:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout the repository
-      - name: Checkout Repository
+      # Step 1: Check out the repository code to scan
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      # Use the OSSPREY-Security action
-      - name: Run Folder Scan
+      # Step 2: Run the OSSPREY scanner
+      - name: Run OSSPREY Scanner
         uses: OSSPREY-Security/gh-action@main
         with:
-          folder: ${{ inputs.folder_to_scan }}
+          folder: "test/example_package"
