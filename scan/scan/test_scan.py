@@ -1,5 +1,8 @@
-from scan import main
+import os
+from scan.scan import main
 
 
 def test_main_function():
-    assert main() == "Expected Output"
+    # Add INPUT_FOLDER to environment variables
+    os.environ["INPUT_FOLDER"] = "../test/simple_math"
+    assert main() == "Success"

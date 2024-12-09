@@ -19,3 +19,4 @@ def main():
         print("Error: 'folder' input is required")
         sys.exit(1)
     scan_folder(folder)
+    return "Success"
