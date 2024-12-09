@@ -28,6 +28,6 @@ jobs:
           poetry run pytest
 
       - name: Test OSSPREY GH Action
-        uses: ./scan  # Reference your local action in the repo
+        uses: ./  # Reference your local action in the repo
         with:
           folder: "test/example_package"

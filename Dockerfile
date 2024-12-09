@@ -1,18 +1,18 @@
 # Use Python base image
-FROM python:3.10-slim
+FROM python:3.12-slim
 
 # Install Poetry
 RUN pip install --no-cache-dir poetry
 
+# Copy files
+COPY . /app
+
 # Set the working directory
 WORKDIR /app
-
-# Copy files
-COPY scan /app
+RUN find .
 
 # Install dependencies
-RUN poetry install --no-root
+RUN poetry install
 
 # Set the entry point to the Python script
-WORKDIR /app/scan
 ENTRYPOINT ["poetry", "run", "python", "scan"]
