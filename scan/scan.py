@@ -16,7 +16,7 @@ def scan_folder(folder_path):
 def main():
     folder = os.getenv("INPUT_FOLDER")  # GitHub Actions provides inputs as environment variables
     if not folder:
-        print("Error: 'folder' input is required")
+        print("ERRRRrror: 'folder' input is required")
         sys.exit(1)
     scan_folder(folder)
     return "Success"
