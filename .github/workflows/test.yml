@@ -23,7 +23,6 @@ jobs:
           pip install poetry
 
       - name: Run Unit Tests
-        working-directory: scan
         run: |
           poetry install
           poetry run pytest
