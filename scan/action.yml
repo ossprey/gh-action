@@ -1,0 +1,9 @@
+name: "Scan Folder with Python Script"
+description: "Runs a Python script using Poetry to scan a folder"
+runs:
+  using: "docker"
+  image: "Dockerfile"
+inputs:
+  folder:
+    description: "Path to the folder to scan"
+    required: true

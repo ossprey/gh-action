@@ -1,0 +1,24 @@
+name: Use OSSPREY-Security GitHub Action
+
+on:
+  workflow_dispatch:
+    inputs:
+      folder_to_scan:
+        description: "Folder to scan"
+        required: true
+        default: "src"
+
+jobs:
+  run-ossprey-action:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Use the OSSPREY-Security action
+      - name: Run Folder Scan
+        uses: OSSPREY-Security/gh-action@main
+        with:
+          folder: ${{ inputs.folder_to_scan }}
