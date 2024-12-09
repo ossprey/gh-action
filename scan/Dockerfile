@@ -5,13 +5,11 @@ FROM python:3.10-slim
 RUN pip install --no-cache-dir poetry
 
 # Copy files
-COPY scan /app
-
-WORKDIR /app
-RUN find .
+COPY . /app
 
 # Set the working directory
-WORKDIR /app/scan
+WORKDIR /app
+RUN find .
 
 # Install dependencies
 RUN poetry install
