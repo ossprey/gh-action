@@ -18,4 +18,4 @@ jobs:
       - name: Run OSSPREY Scanner
         uses: OSSPREY-Security/gh-action@main
         with:
-          folder: "test/example_package"
+          folder: "../test/example_package"
