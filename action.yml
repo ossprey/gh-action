@@ -39,7 +39,7 @@ runs:
     - "--url=${{ inputs.url }}"
     - "--package=${{ inputs.package }}"
     - ${{ inputs.dry-run && '--dry-run' || '' }}
-    - ${{ inputs.github_comments && '--github_comments' || '' }}
+    - ${{ inputs.github_comments && '--github-comments' || '' }}
     - ${{ inputs.verbose && '--verbose' || '' }}
     - ${{ inputs.pipenv && '--pipenv' || '' }}
     - ${{ inputs.requirements && '--requirements' || '' }}
