@@ -35,11 +35,3 @@ inputs:
 runs:
   using: "docker"
   image: "Dockerfile"
-  env:
-    INPUT_URL: ${{ inputs.url }}
-    INPUT_PACKAGE: ${{ inputs.package }}
-    INPUT_DRY_RUN: ${{ inputs.dry-run }}
-    INPUT_GITHUB_COMMENTS: ${{ inputs.github-comments }}
-    INPUT_VERBOSE: ${{ inputs.verbose }}
-    INPUT_PIPENV: ${{ inputs.pipenv }}
-    INPUT_REQUIREMENTS: ${{ inputs.requirements }}
