@@ -1,5 +1,5 @@
-from sbom import create_sbom_from_env, create_sbom_from_requirements
-from virtualenv import VirtualEnv
+from scan.sbom import create_sbom_from_env, create_sbom_from_requirements
+from scan.virtualenv import VirtualEnv
 
 
 def test_get_sbom():
@@ -32,7 +32,7 @@ def test_get_sbom_from_venv_local_package():
     venv.enter()
 
     # Install a package
-    venv.install_package('../../example_packages/sample_malpack')
+    venv.install_package('test/simple_math')
   
     requirements_file = venv.create_requirements_file_from_env()
 
@@ -40,5 +40,5 @@ def test_get_sbom_from_venv_local_package():
     sbom = create_sbom_from_requirements(requirements_file)
 
     assert sbom.get('bomFormat') == 'CycloneDX'
-    assert len(sbom['components']) == 2
-    assert any(map(lambda x: x['name'] == 'sample_malpack', sbom['components']))
+    assert len(sbom['components']) == 7
+    assert any(map(lambda x: x['name'] == 'simple_math', sbom['components']))

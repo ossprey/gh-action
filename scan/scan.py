@@ -1,58 +1,20 @@
-import argparse
 import json
 import logging
 import sys
 
-from .github_actions_reporter import print_gh_action_errors
-from .log import init_logging
-from .sbom import create_sbom_from_requirements
-from .validate import validate
-from .virtualenv import VirtualEnv
+from scan.args import parse_arguments
+from scan.github_actions_reporter import print_gh_action_errors
+from scan.log import init_logging
+from scan.sbom import create_sbom_from_requirements
+from scan.validate import validate
+from scan.virtualenv import VirtualEnv
 
 logger = logging.getLogger(__name__)
 
 
 def main():
 
-    parser = argparse.ArgumentParser(description="API URL:")
-    parser.add_argument(
-        "--url",
-        type=str,
-        help="The URL to process",
-        default="https://api.ossprey.com"
-    )
-    parser.add_argument(
-        "--package",
-        type=str,
-        help="The package to install",
-        default="../example_packages/sample_malpack"
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Dry run mode"
-    )
-    parser.add_argument(
-        "--gh",
-        action="store_true",
-        help="GitHub mode, will attempt to post comments to GitHub"
-    )
-    parser.add_argument("--verbose", action="store_true", help="Verbose mode")
-
-    # Scanning methods
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument(
-        '--pipenv',
-        action='store_true',
-        help="Install the package to generate the SBOM."
-    )
-    group.add_argument(
-        '--requirements',
-        action='store_true',
-        help="Path to the requirements file to generate the SBOM."
-    )
-
-    args = parser.parse_args()
+    args = parse_arguments()
 
     init_logging(args.verbose)
 

@@ -6,7 +6,7 @@ from typing import Iterable, Dict
 from cyclonedx.model.vulnerability import Property
 from github import Github
 
-from .sbom import dict_to_sbom
+from scan.sbom import dict_to_sbom
 
 
 def print_gh_action_errors(sbom_dict, package_path, post_to_github=False):

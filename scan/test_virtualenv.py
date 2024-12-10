@@ -1,7 +1,7 @@
 import os
 import sys
 
-from virtualenv import VirtualEnv
+from scan.virtualenv import VirtualEnv
 
 
 def test_virtual_env_creation():
@@ -59,10 +59,10 @@ def test_local_installation():
     venv.enter()
 
     # Install a package
-    venv.install_package('../../example_packages/sample_malpack')
+    venv.install_package('test/simple_math')
 
     installed_packages = venv.list_installed_packages()
 
     # Make sure we are in a new venv
-    assert len(installed_packages) == 3
+    assert len(installed_packages) == 8
     assert any(map(lambda x: x['name'] == 'numpy', installed_packages))
