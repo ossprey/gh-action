@@ -15,4 +15,4 @@ RUN find .
 RUN poetry install
 
 # Set the entry point to the Python script
-ENTRYPOINT ["poetry", "run", "python", "scan"]
+ENTRYPOINT ["poetry", "run", "python", "-m", "scan"]
