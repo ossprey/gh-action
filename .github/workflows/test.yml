@@ -30,4 +30,5 @@ jobs:
       - name: Test OSSPREY GH Action
         uses: ./  # Reference your local action in the repo
         with:
-          folder: "test/simple_math"
+          package: "test/simple_math"
+          requirements: true
