@@ -19,6 +19,6 @@ RUN poetry install --no-dev --no-interaction --no-ansi
 # Set environment variables to use the local virtual environment
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONPATH="/app/.venv/lib/python3.12/site-packages:$PYTHONPATH"
-
+RUN env
 # Set the entry point to the Python script
 ENTRYPOINT ["poetry", "run", "python", "-m", "scan"]
