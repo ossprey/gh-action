@@ -1,22 +1,48 @@
-import os
+import json
+import logging
 import sys
 
+from scan.args import parse_arguments
+from scan.github_actions_reporter import print_gh_action_errors
+from scan.log import init_logging
+from scan.sbom import create_sbom_from_requirements
+from scan.validate import validate
+from scan.virtualenv import VirtualEnv
 
-def scan_folder(folder_path):
-    if not os.path.exists(folder_path):
-        print(f"Error: Folder '{folder_path}' does not exist.")
-        sys.exit(1)
-
-    print(f"Scanning folder: {folder_path}")
-    for root, dirs, files in os.walk(folder_path):
-        for file in files:
-            print(f"Found file: {os.path.join(root, file)}")
+logger = logging.getLogger(__name__)
 
 
 def main():
-    folder = os.getenv("INPUT_FOLDER")  # GitHub Actions provides inputs as environment variables
-    if not folder:
-        print("Error: 'folder' input is required")
-        sys.exit(1)
-    scan_folder(folder)
-    return "Success"
+
+    args = parse_arguments()
+
+    init_logging(args.verbose)
+
+    package_name = args.package
+
+    if args.pipenv:
+        venv = VirtualEnv()
+        venv.enter()
+
+        venv.install_package(package_name)
+        requirements_file = venv.create_requirements_file_from_env()
+
+        sbom = create_sbom_from_requirements(requirements_file)
+
+        venv.exit()
+    elif args.requirements:
+        sbom = create_sbom_from_requirements(package_name + "/requirements.txt")
+    else:
+        raise Exception("Invalid scanning method")
+
+    if not args.dry_run:
+        sbom = validate(args.url, sbom)
+
+    if sbom:
+        logger.debug(json.dumps(sbom, indent=4))
+
+        # Process the result
+        ret = print_gh_action_errors(sbom, args.package, args.github_comments)
+
+        if not ret:
+            sys.exit(1)
