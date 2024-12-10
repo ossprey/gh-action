@@ -34,7 +34,7 @@ def parse_arguments():
         default=get_bool(os.getenv("INPUT_DRY_RUN"))
     )
     parser.add_argument(
-        "--github_comments",
+        "--github-comments",
         action="store_true",
         help="GitHub mode, will attempt to post comments to GitHub",
         default=get_bool(os.getenv("INPUT_GITHUB_COMMENTS"))

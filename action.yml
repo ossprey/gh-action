@@ -36,10 +36,10 @@ runs:
   using: "docker"
   image: "Dockerfile"
   args:
-  - ${{ inputs.url }}
-  - ${{ inputs.package }}
-  - ${{ inputs.dry_run }}
-  - ${{ inputs.github_comments }}
-  - ${{ inputs.verbose }}
-  - ${{ inputs.pipenv }}
-  - ${{ inputs.requirements }}
+  - "--url=${{ inputs.url }}"
+  - "--package=${{ inputs.package }}"
+  - "--dry-run=${{ inputs.dry_run }}"
+  - "--github-comments=${{ inputs.github_comments }}"
+  - "--verbose=${{ inputs.verbose }}"
+  - "--pipenv=${{ inputs.pipenv }}"
+  - "--requirements=${{ inputs.requirements }}"

@@ -32,5 +32,5 @@ jobs:
         with:
           package: "test/simple_math"
           requirements: true
-          github: false
+          github_comments: false
           dry_run: true
