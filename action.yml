@@ -1,9 +1,50 @@
 name: "Scan Folder with Python Script"
 description: "Runs a Python script using Poetry to scan a folder"
+
+inputs:
+  # We must have a package name
+  package:
+    description: "The package to scan"
+    required: true
+
+  # One of these must be set
+  pipenv:
+    description: "Install the package to generate the SBOM"
+    required: false
+    default: "false"
+  requirements:
+    description: "Path to the requirements file to generate the SBOM"
+    required: false
+    default: "false"
+  
+  # Assume we want to post github comments every time
+  github_comments:
+    description: "GitHub mode, will attempt to post comments to GitHub"
+    required: false
+    default: "true"
+  
+  # Optional arguments
+  url:
+    description: "The URL to process"
+    required: false
+    default: "https://api.ossprey.com"
+  dry_run:
+    description: "Dry run mode"
+    required: false
+    default: "false"
+  verbose:
+    description: "Verbose mode"
+    required: false
+    default: "false"
+
 runs:
   using: "docker"
   image: "Dockerfile"
-inputs:
-  folder:
-    description: "Path to the folder to scan"
-    required: true
+    args:
+    - ${{ inputs.url }}
+    - ${{ inputs.package }}
+    - ${{ inputs.dry_run }}
+    - ${{ inputs.github_comments }}
+    - ${{ inputs.verbose }}
+    - ${{ inputs.pipenv }}
+    - ${{ inputs.requirements }}
