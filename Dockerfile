@@ -18,10 +18,10 @@ RUN poetry config virtualenvs.in-project true
 
 # Install dependencies explicitly for production (excluding dev dependencies)
 RUN poetry install --no-dev --no-interaction --no-ansi
+RUN poetry build
 
-# Set environment variables to use the local virtual environment
-ENV PATH="/app/.venv/bin:$PATH"
-ENV PYTHONPATH="/app/.venv/lib/python3.12/site-packages:$PYTHONPATH"
+# Install the built package into the container
+RUN pip install dist/*.whl
 
 # Set the entry point to the Python script
-ENTRYPOINT ["poetry", "run", "python", "-m", "scan"]
+ENTRYPOINT ["python", "-m", "scan"]
