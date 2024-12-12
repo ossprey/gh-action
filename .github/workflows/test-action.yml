@@ -18,4 +18,6 @@ jobs:
       - name: Run OSSPREY Scanner
         uses: OSSPREY-Security/gh-action@main
         with:
-          folder: ${{ github.workspace }}/test/simple_math
+          package: ${{ github.workspace }}/test/simple_math
+          requirements: true
+          dry-run: true
