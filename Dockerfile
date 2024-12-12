@@ -21,7 +21,7 @@ RUN poetry install --no-dev --no-interaction --no-ansi
 RUN poetry build
 
 # Install the built package into the container
-RUN pip install dist/*.whl
+RUN pip install --no-cache-dir dist/*.whl
 
 # Set the entry point to the Python script
 ENTRYPOINT ["python", "-m", "scan"]
