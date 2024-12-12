@@ -1,6 +1,9 @@
 # Use Python base image
 FROM python:3.12-slim
 
+# Install git
+RUN apt-get update && apt-get install -y git
+
 # Install Poetry
 RUN pip install --no-cache-dir poetry
 
