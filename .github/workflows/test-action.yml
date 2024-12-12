@@ -20,4 +20,5 @@ jobs:
         with:
           package: ${{ github.workspace }}/test/simple_math
           requirements: true
-          dry-run: true
+          dry_run: true
+          github_comments: false
