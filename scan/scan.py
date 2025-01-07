@@ -40,13 +40,16 @@ def main():
 
         sbom = ossprey.validate(sbom)
 
-        if sbom:
-            logger.debug(json.dumps(sbom, indent=4))
-    
-            # Process the result
-            ret = print_gh_action_errors(sbom, args.package, args.github_comments)
-    
-            if not ret:
-                sys.exit(1)
-        else:
+        if not sbom:
+            logger.error("Error with OSSPREY Service")
             sys.exit(1)
+
+    if sbom:
+        logger.debug(json.dumps(sbom, indent=4))
+
+        # Process the result
+        ret = print_gh_action_errors(sbom, args.package, args.github_comments)
+
+        if not ret:
+            sys.exit(1)
+

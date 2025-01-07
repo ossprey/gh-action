@@ -1,7 +1,12 @@
 import pytest
 
 from argparse import Namespace
-from scan.args import parse_arguments  # Replace with your actual script/module
+from scan.args import parse_arguments
+
+
+@pytest.fixture(autouse=True)
+def set_ossprey_api_key(monkeypatch):
+    monkeypatch.setenv("OSSPREY_API_KEY", "SPECIAL_KEY")
 
 
 @pytest.mark.parametrize(
@@ -19,6 +24,7 @@ from scan.args import parse_arguments  # Replace with your actual script/module
                 verbose=True,
                 pipenv=True,
                 requirements=False,
+                api_key="SPECIAL_KEY",
             ),
         ),
         # Test case 2: Environment variable fallback
@@ -33,11 +39,12 @@ from scan.args import parse_arguments  # Replace with your actual script/module
                 verbose=False,
                 pipenv=False,
                 requirements=True,
+                api_key="SPECIAL_KEY",
             ),
         ),
         # Test case 3: CLI overrides environment variables
         (
-            ["script.py", "--url", "https://cli-url.com", "--dry-run", "--pipenv"],
+            ["script.py", "--url", "https://cli-url.com", "--dry-run", "--pipenv", "--api-key", "UNSPECIAL_KEY"],
             {"INPUT_URL": "https://env-url.com", "INPUT_DRY_RUN": "false"},
             Namespace(
                 url="https://cli-url.com",
@@ -47,9 +54,10 @@ from scan.args import parse_arguments  # Replace with your actual script/module
                 verbose=False,
                 pipenv=True,
                 requirements=False,
+                api_key="UNSPECIAL_KEY",
             ),
         ),
-        # Test case 3: Handles only env vars
+        # Test case 4: Handles only env vars
         (
             ["script.py"],
             {"INPUT_URL": "https://env-url.com", "INPUT_PACKAGE": "newtest", "INPUT_PIPENV": "True"},
@@ -61,6 +69,7 @@ from scan.args import parse_arguments  # Replace with your actual script/module
                 verbose=False,
                 pipenv=True,
                 requirements=False,
+                api_key="SPECIAL_KEY",
             ),
         ),
     ],

@@ -25,7 +25,7 @@ def parse_arguments():
         "--package",
         type=str,
         help="The package to scan",
-        default=os.getenv("INPUT_PACKAGE", "test/simple_math")
+        default=os.getenv("INPUT_PACKAGE", "")
     )
     parser.add_argument(
         "--dry-run",
