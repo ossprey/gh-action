@@ -20,7 +20,7 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          pip install poetry
+          pip install poetry==1.8.5
 
       - name: Run Unit Tests
         run: |
