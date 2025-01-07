@@ -18,7 +18,7 @@ def set_ossprey_api_key(monkeypatch):
             {},
             Namespace(
                 url="https://example.com",
-                package="test/simple_math",
+                package="",
                 dry_run=False,
                 github_comments=False,
                 verbose=True,
@@ -33,7 +33,7 @@ def set_ossprey_api_key(monkeypatch):
             {"INPUT_URL": "https://env-url.com", "INPUT_DRY_RUN": "true"},
             Namespace(
                 url="https://env-url.com",
-                package="test/simple_math",
+                package="",
                 dry_run=True,
                 github_comments=False,
                 verbose=False,
@@ -48,7 +48,7 @@ def set_ossprey_api_key(monkeypatch):
             {"INPUT_URL": "https://env-url.com", "INPUT_DRY_RUN": "false"},
             Namespace(
                 url="https://cli-url.com",
-                package="test/simple_math",
+                package="",
                 dry_run=True,
                 github_comments=False,
                 verbose=False,
