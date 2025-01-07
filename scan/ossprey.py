@@ -16,6 +16,10 @@ class Ossprey:
     def __init__(self, api_url, api_key):
         self.api_url = api_url
         self.api_key = api_key
+
+        if not self.api_key:
+            raise Exception("API Key is null or empty")
+        
         self.auth()
 
     def auth(self):
@@ -26,7 +30,7 @@ class Ossprey:
             Exception: Failed to authenticate with API Key
         """
         logger.debug("Authenticating with API Key")
-
+        print(self.api_key)
         data = {
             "grant_type": "refresh_token",
             "client_id": CLIENT_ID,

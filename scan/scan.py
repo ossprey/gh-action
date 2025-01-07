@@ -6,7 +6,7 @@ from scan.args import parse_arguments
 from scan.github_actions_reporter import print_gh_action_errors
 from scan.log import init_logging
 from scan.sbom import create_sbom_from_requirements
-from scan.validate import validate
+from scan.ossprey import Ossprey
 from scan.virtualenv import VirtualEnv
 
 logger = logging.getLogger(__name__)
@@ -36,7 +36,9 @@ def main():
         raise Exception("Invalid scanning method")
 
     if not args.dry_run:
-        sbom = validate(args.url, sbom)
+        ossprey = Ossprey(args.url, args.api_key)
+
+        sbom = ossprey.validate(sbom)
 
         if sbom:
             logger.debug(json.dumps(sbom, indent=4))
