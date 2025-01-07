@@ -52,4 +52,3 @@ def main():
 
         if not ret:
             sys.exit(1)
-
