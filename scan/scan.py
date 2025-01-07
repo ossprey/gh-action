@@ -38,11 +38,13 @@ def main():
     if not args.dry_run:
         sbom = validate(args.url, sbom)
 
-    if sbom:
-        logger.debug(json.dumps(sbom, indent=4))
-
-        # Process the result
-        ret = print_gh_action_errors(sbom, args.package, args.github_comments)
-
-        if not ret:
+        if sbom:
+            logger.debug(json.dumps(sbom, indent=4))
+    
+            # Process the result
+            ret = print_gh_action_errors(sbom, args.package, args.github_comments)
+    
+            if not ret:
+                sys.exit(1)
+        else:
             sys.exit(1)
