@@ -19,13 +19,16 @@ inputs:
     description: "GitHub mode, will attempt to post comments to GitHub"
     required: false
     default: "true"
+  api_key:
+    description: "API key to connect to the OSSPREY API"
+    required: true
   # Optional arguments
   url:
     description: "The URL to process"
     required: false
     default: "https://api.ossprey.com"
   dry_run:
-    description: "Dry run mode"
+    description: "Dry run mode, it won't make any POST requests"
     required: false
     default: "false"
   verbose:
