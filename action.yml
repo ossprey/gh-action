@@ -19,9 +19,6 @@ inputs:
     description: "GitHub mode, will attempt to post comments to GitHub"
     required: false
     default: "true"
-  api_key:
-    description: "API key to connect to the OSSPREY API"
-    required: true
   # Optional arguments
   url:
     description: "The URL to process"
@@ -35,6 +32,10 @@ inputs:
     description: "Verbose mode"
     required: false
     default: "false"
+secrets:
+  api_key:
+    description: "API key to connect to the OSSPREY API"
+    required: true
 runs:
   using: "docker"
   image: "Dockerfile"
