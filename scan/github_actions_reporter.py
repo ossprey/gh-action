@@ -35,9 +35,9 @@ def print_gh_action_errors(sbom_dict, package_path, post_to_github=False):
             print("Error: " + message)
             print(f"::error file={file},line={line}::{message}")
 
-            if post_to_github:
-                post_comments_to_pull_request(details, message, file, line)
-                post_comment_to_github_summary(details, message)
+            if post_to_github and details.is_pull_request:
+                post_comments_to_pull_request(details.token, details.commit_sha, message, file, line)
+                post_comment_to_github_summary(details.token, details.repo, details.pull_number, message)
 
         return False
 
@@ -84,40 +84,44 @@ def properties_to_dict(properties: Iterable[Property]) -> Dict[str, str]:
 
 
 class GitHubDetails:
-    def __init__(self, token, repo, pull_number, commit_sha):
+    def __init__(self, token, repo, pull_number, commit_sha, is_pull_request):
         self.token = token
         self.repo = repo
         self.pull_number = pull_number
         self.commit_sha = commit_sha
+        self.is_pull_request = is_pull_request
 
 
 def create_github_details():
 
     token = os.getenv('GITHUB_TOKEN')
     repo = os.getenv('GITHUB_REPOSITORY')
+    event_name = os.getenv('GITHUB_EVENT_NAME')
     pull_number = os.getenv('GITHUB_REF').split('/')[-2]
+    is_pull_request = False
 
-    commit_sha = get_latest_commit_sha()
+    # Validate if this is a pull request or a push to a branch
+    if event_name == 'pull_request':
+        is_pull_request = True
+    
+        # If the pull number is a number, it is a pull request. Otherwise, it is a direct push
+        if pull_number.isdigit():
+            # Commit Sha
+            g = Github(token)
+            repo = g.get_repo(repo)
+            pr = repo.get_pull(int(pull_number))
+            commit_sha = pr.head.sha
+        else:
+            commit_sha = None
 
-    return GitHubDetails(token, repo, pull_number, commit_sha)
+    return GitHubDetails(token, repo, pull_number, commit_sha, is_pull_request)
 
 
-def get_latest_commit_sha():
-    token = os.getenv('GITHUB_TOKEN')
-    repo = os.getenv('GITHUB_REPOSITORY')
-    pull_number = os.getenv('GITHUB_REF').split('/')[-2]
-
-    g = Github(token)
-    repo = g.get_repo(repo)
-    pr = repo.get_pull(int(pull_number))
-    return pr.head.sha
-
-
-def post_comments_to_pull_request(details, comment, file_path, line=0):
+def post_comments_to_pull_request(token, commit_sha, comment, file_path, line=0):
 
     data = {
         "body": comment,
-        "commit_id": details.commit_sha,
+        "commit_id": commit_sha,
         "path": file_path,
         "line": line,  # This is the line number in the file, not the diff position
         "side": "RIGHT"  # Comment on the right side (current version of the file)
@@ -125,7 +129,7 @@ def post_comments_to_pull_request(details, comment, file_path, line=0):
 
     # Send the POST request to GitHub API
     headers = {
-        "Authorization": f"token {details.token}",
+        "Authorization": f"token {token}",
         "Accept": "application/vnd.github.v3+json"
     }
 
@@ -142,9 +146,9 @@ def post_comments_to_pull_request(details, comment, file_path, line=0):
         print(response.json())  # Debugging information
 
 
-def post_comment_to_github_summary(details, comment):
+def post_comment_to_github_summary(token, repo, pull_number, comment):
     # GitHub API URL to create a comment on the PR
-    url = f"https://api.github.com/repos/{details.repo}/issues/{details.pull_number}/comments"
+    url = f"https://api.github.com/repos/{repo}/issues/{pull_number}/comments"
 
     # Define the comment data
     data = {
@@ -153,7 +157,7 @@ def post_comment_to_github_summary(details, comment):
 
     # Set up the headers with the GitHub token
     headers = {
-        "Authorization": f"token {details.token}",
+        "Authorization": f"token {token}",
         "Accept": "application/vnd.github.v3+json"
     }
 
