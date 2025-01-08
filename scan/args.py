@@ -25,7 +25,7 @@ def parse_arguments():
         "--package",
         type=str,
         help="The package to scan",
-        default=os.getenv("INPUT_PACKAGE", "test/simple_math")
+        default=os.getenv("INPUT_PACKAGE", "")
     )
     parser.add_argument(
         "--dry-run",
@@ -58,6 +58,14 @@ def parse_arguments():
         action='store_true',
         help="Path to the requirements file to generate the SBOM.",
         default=get_bool(os.getenv("INPUT_REQUIREMENTS"))
+    )
+
+    # Authentication
+    parser.add_argument(
+        '--api-key',
+        type=str,
+        help="API Key to authenticate with the API, this can also be set via the OSSPREY_API_KEY environment variable.",
+        default=os.getenv("API_KEY")
     )
 
     args = parser.parse_args()

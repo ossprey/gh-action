@@ -25,7 +25,7 @@ inputs:
     required: false
     default: "https://api.ossprey.com"
   dry_run:
-    description: "Dry run mode"
+    description: "Dry run mode, it won't make any POST requests"
     required: false
     default: "false"
   verbose:
