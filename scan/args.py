@@ -65,7 +65,7 @@ def parse_arguments():
         '--api-key',
         type=str,
         help="API Key to authenticate with the API, this can also be set via the OSSPREY_API_KEY environment variable.",
-        default=os.getenv("OSSPREY_API_KEY")
+        default=os.getenv("API_KEY")
     )
 
     args = parser.parse_args()

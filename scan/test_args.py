@@ -6,7 +6,7 @@ from scan.args import parse_arguments
 
 @pytest.fixture(autouse=True)
 def set_ossprey_api_key(monkeypatch):
-    monkeypatch.setenv("OSSPREY_API_KEY", "SPECIAL_KEY")
+    monkeypatch.setenv("API_KEY", "SPECIAL_KEY")
 
 
 @pytest.mark.parametrize(
