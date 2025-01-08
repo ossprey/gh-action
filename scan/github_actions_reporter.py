@@ -99,6 +99,7 @@ def create_github_details():
     event_name = os.getenv('GITHUB_EVENT_NAME')
     pull_number = os.getenv('GITHUB_REF').split('/')[-2]
     is_pull_request = False
+    commit_sha = None
 
     # Validate if this is a pull request or a push to a branch
     if event_name == 'pull_request':
@@ -111,8 +112,6 @@ def create_github_details():
             repo = g.get_repo(repo)
             pr = repo.get_pull(int(pull_number))
             commit_sha = pr.head.sha
-        else:
-            commit_sha = None
 
     return GitHubDetails(token, repo, pull_number, commit_sha, is_pull_request)
 
