@@ -94,6 +94,9 @@ class GitHubDetails:
 
 def create_github_details():
 
+    if not os.getenv('GITHUB_TOKEN'):
+        raise Exception("GITHUB_TOKEN environment variable not set")
+    
     token = os.getenv('GITHUB_TOKEN')
     repo = os.getenv('GITHUB_REPOSITORY')
     event_name = os.getenv('GITHUB_EVENT_NAME')
