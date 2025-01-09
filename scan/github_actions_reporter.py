@@ -38,7 +38,7 @@ def print_gh_action_errors(sbom_dict, package_path, post_to_github=False):
                 gh_output.write(f"error={message}\n")
 
             if post_to_github and details.is_pull_request:
-                post_comments_to_pull_request(details.token, details.commit_sha, message, file, line)
+                post_comments_to_pull_request(details.token, details.repo, details.pull_number, details.commit_sha, message, file, line)
                 post_comment_to_github_summary(details.token, details.repo, details.pull_number, message)
 
         return False
@@ -118,7 +118,7 @@ def create_github_details():
     return GitHubDetails(token, repo, pull_number, commit_sha, is_pull_request)
 
 
-def post_comments_to_pull_request(token, commit_sha, comment, file_path, line=0):
+def post_comments_to_pull_request(token, repo, pull_number, commit_sha, comment, file_path, line=0):
 
     data = {
         "body": comment,
@@ -135,7 +135,7 @@ def post_comments_to_pull_request(token, commit_sha, comment, file_path, line=0)
     }
 
     # API URL for pull request comments
-    url = f"https://api.github.com/repos/{details.repo}/pulls/{details.pull_number}/comments"
+    url = f"https://api.github.com/repos/{repo}/pulls/{pull_number}/comments"
 
     response = requests.post(url, headers=headers, json=data)
 
