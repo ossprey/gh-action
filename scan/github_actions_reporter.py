@@ -1,5 +1,6 @@
 import requests
 import os
+import logging
 
 from typing import Iterable, Dict
 
@@ -8,6 +9,7 @@ from github import Github
 
 from scan.sbom import dict_to_sbom
 
+logger = logging.getLogger(__name__)
 
 def print_gh_action_errors(sbom_dict, package_path, post_to_github=False):
     """
@@ -106,14 +108,15 @@ def create_github_details():
     # Validate if this is a pull request or a push to a branch
     if event_name == 'pull_request':
         is_pull_request = True
-    
+
         # If the pull number is a number, it is a pull request. Otherwise, it is a direct push
         if pull_number.isdigit():
             # Commit Sha
             g = Github(token)
-            repo = g.get_repo(repo)
-            pr = repo.get_pull(int(pull_number))
+            repo_object = g.get_repo(repo)
+            pr = repo_object.get_pull(int(pull_number))
             commit_sha = pr.head.sha
+            repo = repo_object.full_name
 
     return GitHubDetails(token, repo, pull_number, commit_sha, is_pull_request)
 
@@ -136,6 +139,8 @@ def post_comments_to_pull_request(token, repo, pull_number, commit_sha, comment,
 
     # API URL for pull request comments
     url = f"https://api.github.com/repos/{repo}/pulls/{pull_number}/comments"
+
+    logger.debug(f"Building URL to comments POST: {url}")
 
     response = requests.post(url, headers=headers, json=data)
 
