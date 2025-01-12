@@ -98,6 +98,7 @@ def create_github_details():
 
     token = os.getenv('GITHUB_TOKEN')
     repo = os.getenv('GITHUB_REPOSITORY')
+    org = os.getenv('GITHUB_REPOSITORY')
     event_name = os.getenv('GITHUB_EVENT_NAME')
     pull_number = os.getenv('GITHUB_REF').split('/')[-2]
     is_pull_request = False
@@ -136,6 +137,8 @@ def post_comments_to_pull_request(token, repo, pull_number, commit_sha, comment,
 
     # API URL for pull request comments
     url = f"https://api.github.com/repos/{repo}/pulls/{pull_number}/comments"
+
+    print(f"Building URL to comments POST: {url}")
 
     response = requests.post(url, headers=headers, json=data)
 
