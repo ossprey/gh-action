@@ -1,5 +1,6 @@
 import requests
 import os
+import logging
 
 from typing import Iterable, Dict
 
@@ -8,6 +9,7 @@ from github import Github
 
 from scan.sbom import dict_to_sbom
 
+logger = logging.getLogger(__name__)
 
 def print_gh_action_errors(sbom_dict, package_path, post_to_github=False):
     """
@@ -138,7 +140,7 @@ def post_comments_to_pull_request(token, repo, pull_number, commit_sha, comment,
     # API URL for pull request comments
     url = f"https://api.github.com/repos/{repo}/pulls/{pull_number}/comments"
 
-    print(f"Building URL to comments POST: {url}")
+    logger.debug(f"Building URL to comments POST: {url}")
 
     response = requests.post(url, headers=headers, json=data)
 
