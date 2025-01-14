@@ -30,7 +30,6 @@ class Ossprey:
             Exception: Failed to authenticate with API Key
         """
         logger.debug("Authenticating with API Key")
-        print(self.api_key)
         data = {
             "grant_type": "refresh_token",
             "client_id": CLIENT_ID,
