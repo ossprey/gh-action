@@ -1,5 +1,6 @@
 import requests
 import os
+import logging
 
 from typing import Iterable, Dict
 
@@ -8,6 +9,7 @@ from github import Github
 
 from scan.sbom import dict_to_sbom
 
+logger = logging.getLogger(__name__)
 
 def print_gh_action_errors(sbom_dict, package_path, post_to_github=False):
     """
@@ -30,7 +32,6 @@ def print_gh_action_errors(sbom_dict, package_path, post_to_github=False):
             component = properties["component"]
             version = properties["version"]
             file, line = get_component_reference(component, package_path)
-            file = file[3:]
             message = f"WARNING: {component}:{version} contains malware. Remediate this immediately"
             print("Error: " + message)
             print(f"::error file={file},line={line}::{message}")
@@ -106,14 +107,15 @@ def create_github_details():
     # Validate if this is a pull request or a push to a branch
     if event_name == 'pull_request':
         is_pull_request = True
-    
+
         # If the pull number is a number, it is a pull request. Otherwise, it is a direct push
         if pull_number.isdigit():
             # Commit Sha
             g = Github(token)
-            repo = g.get_repo(repo)
-            pr = repo.get_pull(int(pull_number))
+            repo_object = g.get_repo(repo)
+            pr = repo_object.get_pull(int(pull_number))
             commit_sha = pr.head.sha
+            repo = repo_object.full_name
 
     return GitHubDetails(token, repo, pull_number, commit_sha, is_pull_request)
 
@@ -130,16 +132,19 @@ def post_comments_to_pull_request(token, repo, pull_number, commit_sha, comment,
 
     # Send the POST request to GitHub API
     headers = {
-        "Authorization": f"token {token}",
+        "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github.v3+json"
     }
 
     # API URL for pull request comments
     url = f"https://api.github.com/repos/{repo}/pulls/{pull_number}/comments"
 
+    logger.debug(f"Building URL to comments POST: {url}")
+    logger.debug(f"Using arguments: {data}")
+
     response = requests.post(url, headers=headers, json=data)
 
-    if response.status_code == 201 or response.status_code == 422:
+    if response.status_code == 201:
         # print("Comment added successfully.")
         pass
     else:
@@ -149,6 +154,8 @@ def post_comments_to_pull_request(token, repo, pull_number, commit_sha, comment,
 
 def post_comment_to_github_summary(token, repo, pull_number, comment):
     # GitHub API URL to create a comment on the PR
+    # Although we are posting on a Pull-Request we need to use the issues endpoint.
+    # This allows us to post a comment that does not include a `commit_id` or `path`.
     url = f"https://api.github.com/repos/{repo}/issues/{pull_number}/comments"
 
     # Define the comment data
@@ -158,7 +165,7 @@ def post_comment_to_github_summary(token, repo, pull_number, comment):
 
     # Set up the headers with the GitHub token
     headers = {
-        "Authorization": f"token {token}",
+        "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github.v3+json"
     }
 
