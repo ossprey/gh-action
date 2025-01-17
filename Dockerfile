@@ -5,7 +5,7 @@ FROM python:3.12-slim
 RUN apt-get update && apt-get install -y git
 
 # Install Poetry
-RUN pip install --no-cache-dir poetry==1.8.5
+RUN pip install --no-cache-dir poetry==2.0.1
 
 # Copy files
 COPY . /app
@@ -17,7 +17,7 @@ WORKDIR /app
 RUN poetry config virtualenvs.in-project true
 
 # Install dependencies explicitly for production (excluding dev dependencies)
-RUN poetry install --no-dev --no-interaction --no-ansi
+RUN poetry install --without=dev --no-interaction --no-ansi
 RUN poetry build
 
 # Install the built package into the container
