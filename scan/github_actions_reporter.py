@@ -37,12 +37,12 @@ def print_gh_action_errors(sbom_dict, package_path, post_to_github=False) -> boo
             if post_to_github and details.is_pull_request:
                 post_comments_to_pull_request(details.token, details.repo, details.pull_number, details.commit_sha, message, file, line)
                 post_comment_to_github_summary(details.token, details.repo, details.pull_number, message)
-        else:
-            print("No vulnerabilities found")
+    else:
+        print("No vulnerabilities found")
 
     append_to_github_output(has_vulnerabilities, str(has_vulnerabilities).lower())
 
-    return has_vulnerabilities
+    return not has_vulnerabilities
 
 
 def get_component_reference(component, package_path):
@@ -180,5 +180,5 @@ def post_comment_to_github_summary(token, repo, pull_number, comment):
         print(response.json())
 
 def append_to_github_output(key: str, value: str) -> None:
-    with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
+    with open(os.getenv("GITHUB_OUTPUT"), "a", encoding="utf-8") as f:
         f.write(f"{key}={value}\n")
