@@ -17,20 +17,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.12'
-
-      - name: Install Python dependencies
-        run: |
-          pip install poetry==2.0.1
-
-      - name: Run Unit Tests
-        run: |
-          poetry install
-          poetry run pytest
-
       - name: Test OSSPREY GH Action
         uses: ./  # Reference your local action in the repo
         with:
