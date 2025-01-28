@@ -21,7 +21,7 @@ jobs:
         uses: ./  # Reference your local action in the repo
         with:
           package: "test/simple_math"
-          requirements: true
+          mode: "python-requirements"
           github_comments: false
           verbose: true
         env:
