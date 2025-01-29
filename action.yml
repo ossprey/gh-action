@@ -1,25 +1,18 @@
 name: "Scan Folder with Python Script"
 description: "Runs a Python script using Poetry to scan a folder"
 inputs:
-  # We must have a package name
+  # Required Arguments
   package:
     description: "The package to scan"
     required: true
-  # One of these must be set
-  pipenv:
-    description: "Install the package to generate the SBOM"
-    required: false
-    default: "false"
-  requirements:
-    description: "Path to the requirements file to generate the SBOM"
-    required: false
-    default: "false"
-  # Assume we want to post github comments every time
+  mode:
+    description: "What type of SBOM scan you plan to do (e.g. python-requirements, pipenv, npm, yarn)"
+    required: true
+    # Optional arguments
   github_comments:
     description: "GitHub mode, will attempt to post comments to GitHub"
     required: false
-    default: "true"
-  # Optional arguments
+    default: "true" # Assume we want to post github comments every time
   url:
     description: "The URL to process"
     required: false
