@@ -17,11 +17,33 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Test OSSPREY GH Action
+      - name: Test OSSPREY GH Action with Python
         uses: ./  # Reference your local action in the repo
         with:
-          package: "test/simple_math"
+          package: "test/python_simple_math"
           mode: "python-requirements"
+          github_comments: false
+          verbose: true
+        env:
+          API_KEY: ${{ secrets.OSSPREY_API_KEY }}
+
+      - name: Test OSSPREY GH Action with NPM
+        uses: ./  # Reference your local action in the repo
+        with:
+          package: "test/npm_simple_math"
+          mode: "npm"
+          dry_run: true
+          github_comments: false
+          verbose: true
+        env:
+          API_KEY: ${{ secrets.OSSPREY_API_KEY }}
+
+      - name: Test OSSPREY GH Action with NPM
+        uses: ./  # Reference your local action in the repo
+        with:
+          package: "test/yarn_simple_math"
+          mode: "yarn"
+          dry_run: true
           github_comments: false
           verbose: true
         env:
