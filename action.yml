@@ -25,6 +25,10 @@ inputs:
     description: "Verbose mode"
     required: false
     default: "false"
+  soft_error:
+    description: "Ignore error messages and allow the CICD pipeline to continue"
+    required: false
+    default: "false"
 runs:
   using: "docker"
   image: "Dockerfile"
