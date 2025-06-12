@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y \
 
 
 # Install Python Client
-RUN pip install git+https://github.com/ossprey/ossprey-python-client@v1.0.6
+RUN pip install git+https://github.com/ossprey/ossprey-python-client@v1.0.7
 
 # Set the entry point to the Python script
 ENTRYPOINT ["python", "-m", "ossprey"]
