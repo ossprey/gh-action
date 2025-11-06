@@ -24,6 +24,7 @@ jobs:
           mode: "python-requirements"
           github_comments: false
           verbose: true
+          dry_run_safe: true # Temp until we add API keys back in 
         env:
           API_KEY: ${{ secrets.OSSPREY_API_KEY }}
 
