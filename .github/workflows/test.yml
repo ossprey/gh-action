@@ -32,7 +32,7 @@ jobs:
         with:
           package: "test/npm_simple_math"
           mode: "npm"
-          dry_run: true
+          dry_run_safe: true
           github_comments: false
           verbose: true
         env:
@@ -43,7 +43,7 @@ jobs:
         with:
           package: "test/yarn_simple_math"
           mode: "yarn"
-          dry_run: true
+          dry_run_safe: true
           github_comments: false
           verbose: true
         env:

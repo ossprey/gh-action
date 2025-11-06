@@ -17,8 +17,12 @@ inputs:
     description: "The URL to process"
     required: false
     default: "https://api.ossprey.com"
-  dry_run:
-    description: "Dry run mode, it won't make any POST requests"
+  dry_run_safe:
+    description: "Dry run mode that is always safe, it won't make any POST requests"
+    required: false
+    default: "false"
+  dry_run_malicious:
+    description: "Dry run mode that is potentially malicious, it won't make any POST requests"
     required: false
     default: "false"
   verbose:
