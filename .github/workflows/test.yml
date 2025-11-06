@@ -24,6 +24,7 @@ jobs:
           mode: "python-requirements"
           github_comments: false
           verbose: true
+          dry_run_safe: true # Temp until we add API keys back in 
         env:
           API_KEY: ${{ secrets.OSSPREY_API_KEY }}
 
@@ -32,7 +33,7 @@ jobs:
         with:
           package: "test/npm_simple_math"
           mode: "npm"
-          dry_run: true
+          dry_run_safe: true
           github_comments: false
           verbose: true
         env:
@@ -43,7 +44,7 @@ jobs:
         with:
           package: "test/yarn_simple_math"
           mode: "yarn"
-          dry_run: true
+          dry_run_safe: true
           github_comments: false
           verbose: true
         env:
