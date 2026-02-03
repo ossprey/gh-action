@@ -4,7 +4,7 @@
 cd /workspaces/gh-action/
 docker build -t ossprey-scan .
 
-export INPUT_PACKAGE="test/simple_math"
+export INPUT_PACKAGE="test/python_simple_math"
 export INPUT_MODE="python-requirements"
 export INPUT_VERBOSE=true
 export INPUT_DRY_RUN_SAFE=false
