@@ -10,7 +10,7 @@ readme = "README.md"
 python = "^3.12"
 cyclonedx-bom = "^5.1.1"  
 cyclonedx-python-lib = {extras = ["json-validation"], version = "^8.4.0"}
-requests = "^2.32.3"
+requests = "^2.33.1"
 pygithub = "^2.4.0"
 
 [tool.poetry.group.dev.dependencies]
