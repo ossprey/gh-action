@@ -1,0 +1,28 @@
+{
+  "verdict": "malware",
+  "project": "python_simple_math",
+  "path": "/github/workspace/test/python_simple_math",
+  "components": 7,
+  "findings": [
+    {
+      "purl": "pkg:pypi/requests@2.26.0",
+      "ecosystem": "pypi",
+      "name": "requests",
+      "version": "2.26.0",
+      "id": "OSSPREY-2026-0031",
+      "type": "Malware",
+      "description": "Exfiltrates environment variables on import.",
+      "reference": "https://dashboard.ossprey.com/x"
+    },
+    {
+      "purl": "pkg:npm/@acme/logger@1.4.2",
+      "ecosystem": "npm",
+      "name": "@acme/logger",
+      "version": "1.4.2",
+      "id": "OSSPREY-2026-0032",
+      "type": "Malware",
+      "description": "Pipes | through a table\nand embeds <img src=x> HTML.",
+      "reference": "Unknown"
+    }
+  ]
+}

@@ -4,16 +4,10 @@
         "vscode": {
             "extensions": [
                 "GitHub.copilot",
-                "ms-python.python",
-                "ms-python.vscode-pylance",
-                "njpwerner.autodocstring",
-                "ms-python.flake8",
-                "ms-python.isort",
-                "ms-python.black-formatter",
-                "CoenraadS.bracket-pair-colorizer-2",
                 "aaron-bond.better-comments",
                 "github.vscode-github-actions",
-                "ms-azuretools.vscode-docker"
+                "timonwong.shellcheck",
+                "foxundermoon.shell-format"
             ]
         }
     },

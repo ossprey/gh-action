@@ -1,0 +1,10 @@
+{
+  "verdict": "skipped",
+  "project": "python_simple_math",
+  "components": 7,
+  "findings": [],
+  "skipped": {
+    "message": "Monthly scan quota exhausted.",
+    "reset_at": "2026-09-01T00:00:00Z"
+  }
+}
