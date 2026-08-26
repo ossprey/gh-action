@@ -33,16 +33,15 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - run: ./test/unit/run.sh
 
-  # End-to-end, against the CLI this action drives. The CLI is built from its
-  # own main branch rather than downloaded from a release, so a change there
-  # that breaks the contract between the two repos (the --report JSON keys,
-  # above all) fails here instead of in a user's pipeline. The download path
-  # itself is scripts/install-cli.sh, which every non-CI run exercises.
+  # End-to-end, against the CLI this action drives. The CLI is built from
+  # source rather than downloaded from a release, so a change there that breaks
+  # the contract between the two repos (the --report JSON keys, above all)
+  # fails here instead of in a user's pipeline. The download path itself is
+  # scripts/install-cli.sh, which every non-CI run exercises.
   action:
     name: Action (${{ matrix.case }})
     runs-on: ubuntu-latest
     env:
-      # Test against the CLI built below rather than a published release.
       OSSPREY_CLI: ${{ github.workspace }}/.ossprey-cli-bin/ossprey
     strategy:
       fail-fast: false
@@ -57,9 +56,34 @@ jobs:
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
+      # A change here often needs a matching one in the CLI — the --report
+      # contract lives in both repos at once. When a branch of the same name
+      # exists over there, build that; otherwise build main. So a coordinated
+      # pair of pull requests tests against each other, and falls back to main
+      # by itself once the CLI side merges, with nothing to remember to undo.
+      #
+      # Only branches that already exist in ossprey-cli can be selected, which
+      # takes push access there — a fork's pull request cannot point this
+      # anywhere.
+      - name: Pick the CLI branch to build
+        id: cli
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          set -euo pipefail
+          ref=main
+          if [ -n "$BRANCH" ] && [ "$BRANCH" != main ] &&
+            git ls-remote --exit-code --heads \
+              https://github.com/ossprey/ossprey-cli.git "$BRANCH" >/dev/null 2>&1; then
+            ref="$BRANCH"
+            echo "::notice::Building ossprey-cli from its companion branch '$ref'."
+          fi
+          echo "ref=$ref" >>"$GITHUB_OUTPUT"
+
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: ossprey/ossprey-cli
+          ref: ${{ steps.cli.outputs.ref }}
           path: .ossprey-cli
 
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
@@ -120,48 +144,33 @@ jobs:
           [ -n "$name" ] && echo "  ✓ findings names $name"
           case "$MALWARE_SUMMARY" in
             *"malware detected"*) echo "  ✓ summary renders the verdict" ;;
-            *) echo "  ✗ summary did not render the verdict"; fail=1 ;;
+            *)
+              echo "  ✗ summary did not render the verdict"
+              fail=1
+              ;;
           esac
           exit "$fail"
 
-  # The v1 (Docker/Python) input names must keep working: upgrading should be a
-  # one-line change to `uses:`, not a rewrite of everyone's workflow.
-  legacy-inputs:
-    name: Legacy inputs
-    runs-on: ubuntu-latest
-    env:
-      OSSPREY_CLI: ${{ github.workspace }}/.ossprey-cli-bin/ossprey
-    steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          repository: ossprey/ossprey-cli
-          path: .ossprey-cli
-
-      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
-        with:
-          go-version-file: .ossprey-cli/go.mod
-          cache-dependency-path: .ossprey-cli/go.sum
-
-      - name: Build the CLI
-        run: |
-          mkdir -p "$(dirname "$OSSPREY_CLI")"
-          go build -o "$OSSPREY_CLI" ./cmd/ossprey
-        working-directory: .ossprey-cli
-
-      - name: Scan with the v1 input names
-        id: v1
+      # The v1/v2 snake_case inputs must keep working: upgrading should be a
+      # one-line change to `uses:`, not a rewrite of everyone's workflow. One
+      # case is enough — the mapping doesn't vary by ecosystem.
+      - name: Scan with the v2 input names
+        id: v2
+        if: matrix.case == 'python'
         uses: ./
         with:
-          package: "test/python_simple_math"
+          package: ${{ matrix.path }}
           mode: "python-requirements"
           github_comments: false
           verbose: true
           dry_run_safe: true
 
-      - name: Assert the verdict
+      - name: Assert the v2 verdict
+        if: matrix.case == 'python'
         env:
-          VERDICT: ${{ steps.v1.outputs.verdict }}
+          VERDICT: ${{ steps.v2.outputs.verdict }}
         run: |
-          [ "$VERDICT" = clean ] || { echo "got '$VERDICT', want clean"; exit 1; }
+          [ "$VERDICT" = clean ] || {
+            echo "got '$VERDICT', want clean"
+            exit 1
+          }

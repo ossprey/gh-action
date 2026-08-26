@@ -162,6 +162,10 @@ that can't reach github.com.
 shellcheck -x scripts/*.sh test/*.sh test/unit/*.sh
 ```
 
+CI additionally runs the action end to end against a CLI built from source. If
+a branch of the same name exists in `ossprey-cli`, it builds that one — so a
+change spanning both repos is tested against its other half.
+
 `test/test_gh_action.sh` uses `--dry-run-malicious`, so it needs no API key.
 Pass `--live` (with `OSSPREY_API_KEY` set) to hit the real API. The projects
 under `test/` are fixtures with deliberately old dependency sets for the

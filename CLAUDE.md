@@ -83,9 +83,15 @@ Things that are the way they are on purpose:
 ## CI
 
 `.github/workflows/test.yml`: shellcheck, the unit tests, then the action run
-end-to-end against a CLI **built from `ossprey-cli`'s main branch** (via
-`OSSPREY_CLI`) rather than a release, so a change there that breaks the report
-contract fails here instead of in a user's pipeline.
+end-to-end against a CLI **built from source** (via `OSSPREY_CLI`) rather than
+a release, so a change there that breaks the report contract fails here instead
+of in a user's pipeline.
+
+Which CLI source: if a branch of the same name as this pull request's exists in
+`ossprey-cli`, CI builds that; otherwise `main`. So a change spanning both repos
+— which the `--report` contract regularly forces — is tested against its other
+half, and falls back to `main` on its own once the CLI side merges. Give the two
+branches the same name and it just works; there is nothing to undo afterwards.
 
 Releases are cut by the manual `tag.yml` workflow. This rewrite is v3 (v2 was
 the Docker/Python action); the README's examples reference `@v3`.
