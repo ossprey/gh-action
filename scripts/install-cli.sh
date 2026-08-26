@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install the Ossprey CLI into a temp dir on PATH for the rest of the job.
+# Put the Ossprey CLI on PATH for the rest of the job.
 set -euo pipefail
 
 # shellcheck source=scripts/lib.sh
@@ -41,17 +41,53 @@ if [ -n "${OSSPREY_CLI:-}" ]; then
   exit 0
 fi
 
+case "$(uname -s)" in
+  Linux) os=linux ;;
+  Darwin) os=darwin ;;
+  *) die "unsupported OS: $(uname -s)" ;;
+esac
+case "$(uname -m)" in
+  x86_64 | amd64) arch=amd64 ;;
+  aarch64 | arm64) arch=arm64 ;;
+  *) die "unsupported architecture: $(uname -m)" ;;
+esac
+asset="ossprey-${os}-${arch}"
+
 if [ "$version" = "latest" ]; then
   base="https://github.com/${REPO}/releases/latest/download"
 else
   base="https://github.com/${REPO}/releases/download/${version}"
 fi
 
-# The installer is fetched from the same release as the binary it installs, and
-# verifies the binary's published sha256 before putting it on PATH.
-echo "Installing the Ossprey CLI (${version})"
-curl -fsSL "${base}/install.sh" |
-  OSSPREY_INSTALL_DIR="$install_dir" OSSPREY_VERSION="$version" sh
+# Fetch the binary and its published checksum, and verify before anything is
+# executed. Deliberately NOT `curl .../install.sh | sh`: that runs remote code
+# with the workflow's privileges *before* any verification, which is not a
+# thing a supply-chain scanner should do in someone's pipeline. The checksum
+# comes from the same release, so it is an integrity check on the download,
+# not a signature — but the failure mode it removes (arbitrary code execution
+# from a tampered installer) is the one that matters.
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+echo "Downloading the Ossprey CLI (${version}, ${os}/${arch})"
+curl -fsSL -o "$tmp/$asset" "${base}/${asset}" ||
+  die "could not download ${base}/${asset}"
+curl -fsSL -o "$tmp/${asset}.sha256" "${base}/${asset}.sha256" ||
+  die "could not download the checksum for ${asset}. Refusing to run an unverified binary."
+
+if command -v sha256sum >/dev/null 2>&1; then
+  (cd "$tmp" && sha256sum -c "${asset}.sha256" >/dev/null) ||
+    die "checksum mismatch on ${asset}. Refusing to run it."
+elif command -v shasum >/dev/null 2>&1; then
+  (cd "$tmp" && shasum -a 256 -c "${asset}.sha256" >/dev/null) ||
+    die "checksum mismatch on ${asset}. Refusing to run it."
+else
+  die "no sha256 tool available to verify the download."
+fi
+echo "Checksum verified."
+
+chmod +x "$tmp/$asset"
+mv "$tmp/$asset" "$install_dir/ossprey"
 
 echo "$install_dir" >>"${GITHUB_PATH:-/dev/null}"
 export PATH="$install_dir:$PATH"

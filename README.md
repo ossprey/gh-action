@@ -106,8 +106,13 @@ Use the outputs to do your own thing with a finding:
     api-key: ${{ secrets.OSSPREY_API_KEY }}
     soft-fail: true
 - if: steps.ossprey.outputs.verdict == 'malware'
+  # Through the environment, never interpolated into the script: a package
+  # description is text from the registry, and an apostrophe in it would end
+  # the quoting — with whatever follows read as shell.
+  env:
+    FINDINGS: ${{ steps.ossprey.outputs.findings }}
   run: |
-    echo '${{ steps.ossprey.outputs.findings }}' | jq -r '.[] | .purl'
+    printf '%s\n' "$FINDINGS" | jq -r '.[] | "\(.name)@\(.version)"'
 ```
 
 ## Upgrading from v2

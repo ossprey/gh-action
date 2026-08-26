@@ -15,7 +15,7 @@ GitHub API call.
 
 ## Layout
 
-```
+```text
 action.yml            composite action: 6 steps, one script each
 scripts/              the steps (bash); lib.sh is sourced, never executed
 scripts/findings-table.jq   the Markdown table
@@ -37,8 +37,10 @@ OSSPREY_CLI=/path/to/ossprey ./test/test_gh_action.sh # against a local CLI buil
 
 The CLI is the contract. `scripts/scan.sh` runs `ossprey scan --report <file>`
 and everything downstream reads that JSON: `verdict` (`clean` / `malware` /
-`skipped`), `components`, and `findings[]` pre-split into `name`, `version`,
-`ecosystem`, `description`. **Those key names are a cross-repo contract** —
+`skipped`), `components`, and `findings[]` pre-split into `purl`, `name`,
+`version`, `ecosystem`, `description`. The action adds a fourth verdict of its
+own, `error`, when no report was written at all — the scan did not complete, so
+nothing was checked. **Those key names are a cross-repo contract** —
 `ossprey-cli`'s `internal/scan/report.go` writes them and
 `test/smoke/report_smoke_test.go` there pins them. The action needs CLI
 `v0.13.0`+; `install-cli.sh` checks for the `--report` flag and says so plainly

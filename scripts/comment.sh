@@ -34,13 +34,29 @@ auth=(-H "Authorization: Bearer ${GH_TOKEN}"
   -H "Accept: application/vnd.github+json"
   -H "X-GitHub-Api-Version: 2022-11-28")
 
+# posting_identity echoes the login this token comments as. /user answers for
+# a personal access token; the Actions token is not a user and gets a 403, in
+# which case its comments are authored by github-actions[bot].
+posting_identity() {
+  local login
+  login="$(curl -sS "${auth[@]}" "${api}/user" 2>/dev/null | jq -r '.login // empty')"
+  printf '%s' "${login:-github-actions[bot]}"
+}
+
 # find_comment echoes the id of this action's previous comment, if any.
+#
+# Matching the marker alone is not enough: anyone who can comment on the pull
+# request could paste it into their own comment and have the next run
+# overwrite them. The author has to be us as well. If the identity comes back
+# wrong the cost is a duplicate comment, never a clobbered one.
 find_comment() {
-  local page=1 body ids
+  local page=1 body ids me
+  me="$(posting_identity)"
   while [ "$page" -le 10 ]; do
     body="$(curl -sS --fail-with-body "${auth[@]}" \
       "${api}/repos/${REPO}/issues/${PR_NUMBER}/comments?per_page=100&page=${page}")" || return 1
-    ids="$(printf '%s' "$body" | jq -r --arg m "$MARKER" '.[] | select(.body // "" | contains($m)) | .id')"
+    ids="$(printf '%s' "$body" | jq -r --arg m "$MARKER" --arg me "$me" \
+      '.[] | select((.body // "") | contains($m)) | select(.user.login == $me) | .id')"
     if [ -n "$ids" ]; then
       # The newest marked comment wins if an older run somehow left two.
       printf '%s' "$ids" | tail -n1

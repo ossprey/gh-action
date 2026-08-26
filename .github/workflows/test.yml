@@ -21,6 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
 
       # -x follows the `. lib.sh` sources so the helpers are checked too.
       - name: shellcheck
@@ -31,6 +33,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
       - run: ./test/unit/run.sh
 
   # End-to-end, against the CLI this action drives. The CLI is built from
@@ -55,6 +59,8 @@ jobs:
             path: test/yarn_simple_math
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
 
       # A change here often needs a matching one in the CLI — the --report
       # contract lives in both repos at once. When a branch of the same name
@@ -85,6 +91,7 @@ jobs:
           repository: ossprey/ossprey-cli
           ref: ${{ steps.cli.outputs.ref }}
           path: .ossprey-cli
+          persist-credentials: false
 
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:

@@ -24,9 +24,10 @@ inputs:
     default: "https://api.ossprey.com"
   comment:
     description: >-
-      Post the verdict as a pull-request comment: "on-failure" (only when
-      malware is found, updating an earlier comment to clean once it is fixed),
-      "always", or "never". Needs `permissions: pull-requests: write`.
+      Post the verdict as a pull-request comment: "on-failure" (when malware is
+      found or the scan fails to complete, updating an earlier comment to clean
+      once it is fixed), "always", or "never". Needs
+      `permissions: pull-requests: write`.
     required: false
     default: "on-failure"
   github-token:
@@ -43,7 +44,8 @@ inputs:
     default: ""
   cli-version:
     description: >-
-      Version of the Ossprey CLI to install, e.g. "v0.12.1". Defaults to the
+      Version of the Ossprey CLI to install, e.g. "v0.13.0" (the oldest this
+      action supports — it needs `scan --report`). Defaults to the
       latest release, so new malware detections apply without bumping this
       action; pin it if you need a byte-identical toolchain.
     required: false
