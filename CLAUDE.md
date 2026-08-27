@@ -13,6 +13,17 @@ It holds no scanning logic of its own. Everything about *what* counts as
 malware lives in the CLI; this repo is input plumbing, rendering and the
 GitHub API call.
 
+That division is deliberate and runs both ways. The CLI's job ends at
+`--report`: a verdict plus the findings, in JSON, usable from any CI. Every
+GitHub-shaped thing — the Markdown table, the sticky pull-request comment, the
+job summary, `::error::` annotations, the v2 input aliases — lives here, and
+stays here. When a change would be tidier as a CLI feature (`--report-format
+markdown`, a `render` subcommand, the CLI posting the comment itself), that is
+the wrong direction: it would put GitHub Actions UI in a binary that Python and
+JavaScript developers install to run `ossprey scan`, and tie this repo's
+rendering to the CLI's release cadence. Add it to `scripts/` instead. The only
+changes to ask of the CLI are ones another CI system would want too.
+
 ## Layout
 
 ```text
