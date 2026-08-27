@@ -51,9 +51,11 @@ and everything downstream reads that JSON: `verdict` (`clean` / `malware` /
 `skipped`), `components`, and `findings[]` pre-split into `purl`, `name`,
 `version`, `ecosystem`, `description`. **Those key names are a cross-repo
 contract** — `ossprey-cli`'s `internal/scan/report.go` writes them and
-`test/smoke/report_smoke_test.go` there pins them. The action needs CLI
-`v0.13.0`+; `install-cli.sh` checks for the `--report` flag and says so plainly
-rather than letting the scan die on "unknown flag".
+`test/smoke/report_smoke_test.go` there pins them. The action needs a CLI
+carrying `scan --report`, which landed after `v0.14.0`. `install-cli.sh` checks
+for the flag itself rather than comparing versions — a hardcoded floor is one
+more number to keep in sync with a cadence this repo does not control — and
+says so plainly rather than letting the scan die on "unknown flag".
 
 When no report was written at all the action supplies a verdict of its own,
 choosing between two by the CLI's exit code: `disabled` on exit 0 (a deliberate

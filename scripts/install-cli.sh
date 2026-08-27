@@ -6,16 +6,17 @@ set -euo pipefail
 . "$(dirname "$0")/lib.sh"
 
 REPO="ossprey/ossprey-cli"
-# First CLI release with `ossprey scan --report`.
-MIN_VERSION="v0.13.0"
 version="${CLI_VERSION:-latest}"
 
-# The action reads the machine-readable report that `--report` writes. Say so
-# plainly when the CLI in hand predates it, rather than letting the scan fail
-# later with "unknown flag: --report".
+# The action reads its verdict from the report that `ossprey scan --report`
+# writes, so a CLI without the flag cannot drive it. Probed as a capability
+# rather than compared against a minimum version: the flag landed after
+# v0.14.0, and a hardcoded floor here is one more number to keep in sync with
+# a release cadence this repo does not control. Saying so up front also beats
+# letting the scan die later on "unknown flag: --report".
 check_report_support() {
   if ! ossprey scan --help 2>&1 | grep -q -- '--report'; then
-    die "This Ossprey CLI has no --report flag, which the action needs. Use cli-version 'latest', or pin ${MIN_VERSION} or newer."
+    die "This Ossprey CLI has no --report flag, which the action needs. Leave cli-version at 'latest', or pin a release that carries the flag — v0.14.0 and earlier predate it."
   fi
 }
 

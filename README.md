@@ -74,7 +74,7 @@ The comment is sticky: the same comment is edited on every run, and flips to
 | `github-token` | `${{ github.token }}` | Token used to post that comment. |
 | `soft-fail` | `false` | Report findings but let the job pass. |
 | `sbom` | — | Path to write the full OSSBOM JSON to. |
-| `cli-version` | `latest` | Ossprey CLI version, e.g. `v0.13.0`. |
+| `cli-version` | `latest` | Ossprey CLI version, e.g. `v0.15.0`. Must be a release carrying `scan --report`; `v0.14.0` and earlier predate it. |
 | `verbose` | `false` | Verbose CLI logging. |
 | `dry-run-safe` | `false` | Skip the API and report clean. For testing the wiring. |
 | `dry-run-malicious` | `false` | Skip the API and report a fake finding. For testing the wiring. |
