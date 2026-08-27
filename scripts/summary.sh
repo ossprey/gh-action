@@ -54,6 +54,17 @@ case "$verdict" in
     body+="${skip_message:-The Ossprey API declined to run this scan.}"$'\n\n'
     body+="**Nothing was checked on this run** — this is not a clean verdict."$'\n'
     ;;
+  disabled)
+    body+="## ⚠️ Ossprey — scanning disabled"$'\n\n'
+    if env_enabled "${OSSPREY_CI_CACHE_SCAN_ONLY:-}"; then
+      body+="\`OSSPREY_CI_CACHE_SCAN_ONLY\` is set: the scan was submitted to the dashboard, but no verdict was fetched and the build is never failed."$'\n\n'
+    elif env_enabled "${OSSPREY_SKIP_CI:-}"; then
+      body+="\`OSSPREY_SKIP_CI\` is set: no scan ran."$'\n\n'
+    else
+      body+="The scan completed without reaching a verdict."$'\n\n'
+    fi
+    body+="**Nothing was checked on this run** — this is not a clean verdict."$'\n'
+    ;;
   *)
     body+="## ❌ Ossprey — scan failed"$'\n\n'
     body+="The scan did not complete, so nothing was checked. See the job log for the error."$'\n'

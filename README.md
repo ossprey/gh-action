@@ -87,7 +87,7 @@ the fix rather than a stale 🚨.
 
 | Output | Description |
 |---|---|
-| `verdict` | `clean`, `malware`, `skipped` or `error`. |
+| `verdict` | `clean`, `malware`, `skipped`, `disabled` or `error`. |
 | `findings-count` | Number of malicious packages. |
 | `findings` | The malicious packages, as a compact JSON array. |
 | `report` | Path to the JSON report from `ossprey scan --report`. |
@@ -96,6 +96,12 @@ the fix rather than a stale 🚨.
 `skipped` means your Ossprey quota was exhausted and **nothing was checked**.
 It is not a clean verdict; the job passes (a quota limit shouldn't break your
 build) but the summary says so plainly.
+
+`disabled` means the CLI was told not to produce a verdict — `OSSPREY_SKIP_CI`
+(no scan at all) or `OSSPREY_CI_CACHE_SCAN_ONLY` (submitted to the dashboard,
+build never failed). Set either as job or org-level `env` while rolling Ossprey
+out. Like `skipped` it passes the job and is not clean; the summary names which
+switch did it, so a green run is never mistaken for a scanned one.
 
 ### Failing closed
 
@@ -111,14 +117,14 @@ read the verdict and fail on it yourself:
     api-key: ${{ secrets.OSSPREY_API_KEY }}
 
 - name: Require a completed scan
-  if: steps.ossprey.outputs.verdict == 'skipped'
+  if: contains(fromJSON('["skipped","disabled"]'), steps.ossprey.outputs.verdict)
   run: |
-    echo "::error::quota exhausted — no packages were checked on this run"
+    echo "::error::verdict was '${{ steps.ossprey.outputs.verdict }}' — no packages were checked"
     exit 1
 ```
 
-Only `skipped` needs this. `malware` and `error` (the scan did not complete at
-all) already fail the job unless you set `soft-fail: true`.
+Only `skipped` and `disabled` need this. `malware` and `error` (the scan did not
+complete at all) already fail the job unless you set `soft-fail: true`.
 
 While you are hardening: pin `cli-version` to a release rather than leaving it
 at `latest`, so the binary a run downloads is the one you last reviewed. The

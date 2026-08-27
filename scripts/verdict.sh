@@ -20,6 +20,12 @@ case "$verdict" in
     warn "Ossprey scan skipped — nothing was checked on this run."
     exit 0
     ;;
+  disabled)
+    # A deliberate no-scan must never fail the build — that is the whole point
+    # of the kill switch. The warning is what keeps it from passing silently.
+    warn "Ossprey scanning is disabled for this run — nothing was checked."
+    exit 0
+    ;;
   malware)
     error "Ossprey found $count malicious package(s). See the job summary."
     ;;

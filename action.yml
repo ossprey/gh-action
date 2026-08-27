@@ -99,8 +99,9 @@ inputs:
 outputs:
   verdict:
     description: >-
-      "clean", "malware", "skipped" (quota exhausted — nothing was checked) or
-      "error" (the scan did not complete).
+      "clean", "malware", "skipped" (quota exhausted — nothing was checked),
+      "disabled" (OSSPREY_SKIP_CI / OSSPREY_CI_CACHE_SCAN_ONLY — nothing was
+      checked, build not failed) or "error" (the scan did not complete).
     value: ${{ steps.scan.outputs.verdict }}
   findings-count:
     description: "Number of malicious packages found."

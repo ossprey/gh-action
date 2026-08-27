@@ -49,13 +49,19 @@ OSSPREY_CLI=/path/to/ossprey ./test/test_gh_action.sh # against a local CLI buil
 The CLI is the contract. `scripts/scan.sh` runs `ossprey scan --report <file>`
 and everything downstream reads that JSON: `verdict` (`clean` / `malware` /
 `skipped`), `components`, and `findings[]` pre-split into `purl`, `name`,
-`version`, `ecosystem`, `description`. The action adds a fourth verdict of its
-own, `error`, when no report was written at all — the scan did not complete, so
-nothing was checked. **Those key names are a cross-repo contract** —
-`ossprey-cli`'s `internal/scan/report.go` writes them and
+`version`, `ecosystem`, `description`. **Those key names are a cross-repo
+contract** — `ossprey-cli`'s `internal/scan/report.go` writes them and
 `test/smoke/report_smoke_test.go` there pins them. The action needs CLI
 `v0.13.0`+; `install-cli.sh` checks for the `--report` flag and says so plainly
 rather than letting the scan die on "unknown flag".
+
+When no report was written at all the action supplies a verdict of its own,
+choosing between two by the CLI's exit code: `disabled` on exit 0 (a deliberate
+no-verdict mode — `--skip-ci` / `--ci-cache-scan-only` or their env vars) and
+`error` otherwise (the scan did not complete). Neither is clean — nothing was
+checked either way — but only `error` fails the build. Do not collapse them:
+calling a deliberate no-scan a failure turns the rollout kill switch into a red
+build on every run.
 
 Things that are the way they are on purpose:
 
@@ -69,7 +75,15 @@ Things that are the way they are on purpose:
   posted on the runs that most need it.
 - **`skipped` is not `clean`.** A quota-exhausted scan checked nothing. It
   exits 0 (a quota limit must not break someone's build) but the summary says
-  so, and nothing may render it as "no malware found".
+  so, and nothing may render it as "no malware found". `disabled` is the same
+  bargain for a deliberate no-scan, and its summary names the switch
+  responsible so a green run is never mistaken for a scanned one.
+- **A verdict is never inferred from config.** `scan.sh` classifies on what the
+  CLI *did* — report present, exit code — not on reading `OSSPREY_SKIP_CI`
+  itself. The CLI's env truthiness is looser than the action's `is_true`
+  (`lib.sh: env_enabled` mirrors it), so guessing would misclassify
+  `OSSPREY_SKIP_CI=yep` as a failed scan. The env vars are read only to word
+  the message.
 - **Failing to comment never fails the build.** A missing
   `pull-requests: write` warns. A clean scan turning red over a comment
   permission would be indefensible.

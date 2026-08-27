@@ -179,6 +179,31 @@ echo "summary.sh"
   assert_contains "error: says nothing was checked" "$md" "nothing was checked"
 )
 
+# A deliberate no-scan is neither clean nor a failure, and the summary has to
+# name which switch did it — otherwise a green-but-unscanned build looks like a
+# passing one.
+(
+  out="$workdir/out8b"
+  : >"$out"
+  RUNNER_TEMP="$workdir" GITHUB_OUTPUT="$out" VERDICT="disabled" REPORT="" SCAN_PATH="." \
+    OSSPREY_CI_CACHE_SCAN_ONLY=1 "$scripts/summary.sh" >/dev/null
+  md="$(output "$out" markdown)"
+  assert_contains "disabled: heading" "$md" "scanning disabled"
+  assert_contains "disabled: names the switch" "$md" "OSSPREY_CI_CACHE_SCAN_ONLY"
+  assert_contains "disabled: not a clean verdict" "$md" "Nothing was checked"
+  assert_not_contains "disabled: never says clean" "$md" "no malware found"
+  assert_not_contains "disabled: is not a failure" "$md" "scan failed"
+)
+(
+  out="$workdir/out8c"
+  : >"$out"
+  RUNNER_TEMP="$workdir" GITHUB_OUTPUT="$out" VERDICT="disabled" REPORT="" SCAN_PATH="." \
+    OSSPREY_SKIP_CI=true "$scripts/summary.sh" >/dev/null
+  md="$(output "$out" markdown)"
+  assert_contains "disabled/skip-ci: names the switch" "$(output "$out" markdown)" "OSSPREY_SKIP_CI"
+  assert_contains "disabled/skip-ci: no scan ran" "$md" "no scan ran"
+)
+
 echo "verdict.sh"
 (
   VERDICT="clean" "$scripts/verdict.sh" >/dev/null 2>&1
@@ -196,6 +221,11 @@ echo "verdict.sh"
 (
   VERDICT="error" EXIT_CODE=1 "$scripts/verdict.sh" >/dev/null 2>&1
   assert_eq "error exits 1" "$?" "1"
+)
+(
+  # The rollout kill switch exists to stop scanning, not to stop the build.
+  VERDICT="disabled" "$scripts/verdict.sh" >/dev/null 2>&1
+  assert_eq "disabled exits 0" "$?" "0"
 )
 (
   VERDICT="malware" FINDINGS_COUNT=2 SOFT_FAIL=true "$scripts/verdict.sh" >/dev/null 2>&1

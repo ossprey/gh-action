@@ -39,6 +39,18 @@ bool() {
   if is_true "${1:-}"; then echo true; else echo false; fi
 }
 
+# env_enabled mirrors the CLI's own env-var truthiness (ossprey-cli
+# internal/env/ciflags.go: anything but empty/0/false/no/off counts as on),
+# which is deliberately looser than the input spellings is_true accepts.
+# Used only to word a message — never to decide a verdict. What the CLI
+# actually did is the source of truth there, not our guess at its config.
+env_enabled() {
+  case "$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')" in
+    '' | 0 | false | no | off) return 1 ;;
+    *) return 0 ;;
+  esac
+}
+
 # set_output writes one step output. Always heredoc-delimited: a finding's
 # description is attacker-adjacent text that may well contain a newline, and
 # the `name=value` form would silently truncate it — or, worse, let the rest of

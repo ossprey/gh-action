@@ -51,13 +51,26 @@ is_true "${DRY_RUN_MALICIOUS:-}" && args+=(--dry-run-malicious)
 OSSPREY_API_KEY="$key" ossprey "${args[@]}"
 code=$?
 
-# The CLI writes the report before exiting non-zero on malware, so its absence
-# means the scan itself failed (bad path, bad key, network). "error" is
-# deliberately not "clean": nothing was checked.
+# The CLI writes the report before exiting non-zero on malware, so a missing
+# report means the run reached no verdict. Which of the two reasons applies is
+# told by the exit code, and the difference matters a lot:
+#
+#   exit 0 — a deliberate no-verdict mode (--skip-ci / --ci-cache-scan-only,
+#            or their env vars). Calling that a failure would turn the
+#            observe-only rollout switch into a red build on every run, which
+#            is the exact opposite of what it is for.
+#   exit n — the scan itself failed (bad path, bad key, network).
+#
+# Neither is "clean": nothing was checked either way.
 if [ -s "$report" ]; then
   verdict="$(jq -r '.verdict // "error"' "$report")"
   findings="$(jq -c '.findings // []' "$report")"
   count="$(jq -r '.findings | length' "$report")"
+elif [ "$code" -eq 0 ]; then
+  verdict="disabled"
+  findings="[]"
+  count=0
+  report=""
 else
   verdict="error"
   findings="[]"
