@@ -97,6 +97,34 @@ the fix rather than a stale 🚨.
 It is not a clean verdict; the job passes (a quota limit shouldn't break your
 build) but the summary says so plainly.
 
+### Failing closed
+
+The default is fail-open on `skipped`, because a quota limit is a billing
+problem and shouldn't stop a team merging. If you would rather a scan that
+checked nothing block the merge — reasonable if this action gates a release —
+read the verdict and fail on it yourself:
+
+```yaml
+- uses: ossprey/gh-action@v3
+  id: ossprey
+  with:
+    api-key: ${{ secrets.OSSPREY_API_KEY }}
+
+- name: Require a completed scan
+  if: steps.ossprey.outputs.verdict == 'skipped'
+  run: |
+    echo "::error::quota exhausted — no packages were checked on this run"
+    exit 1
+```
+
+Only `skipped` needs this. `malware` and `error` (the scan did not complete at
+all) already fail the job unless you set `soft-fail: true`.
+
+While you are hardening: pin `cli-version` to a release rather than leaving it
+at `latest`, so the binary a run downloads is the one you last reviewed. The
+download is checksum-verified against the same release either way, which
+proves integrity, not provenance.
+
 Use the outputs to do your own thing with a finding:
 
 ```yaml
