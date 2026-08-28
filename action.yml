@@ -1,38 +1,192 @@
-name: "Scan Folder with Python Script"
-description: "Runs a Python-based scanner against a folder"
+name: "Ossprey supply-chain malware scan"
+description: "Catalogue your Python/JavaScript dependencies and fail the build if any of them contain malware."
+author: "Ossprey"
+
+branding:
+  icon: "shield"
+  color: "blue"
+
 inputs:
-  # Required Arguments
-  package:
-    description: "The package to scan"
-    required: true
-  mode:
-    description: "What type of SBOM scan you plan to do (e.g. python-requirements, pipenv, npm, yarn)"
-    required: true
-    # Optional arguments
-  github_comments:
-    description: "GitHub mode, will attempt to post comments to GitHub"
+  path:
+    description: "Directory to scan."
     required: false
-    default: "true" # Assume we want to post github comments every time
-  url:
-    description: "The URL to process"
+    default: "."
+  api-key:
+    description: >-
+      Ossprey API key. Get one with `ossprey init` or from
+      https://dashboard.ossprey.com and store it as a repository secret.
+      Falls back to the OSSPREY_API_KEY / API_KEY environment variables.
+    required: false
+    default: ""
+  api-url:
+    description: "Ossprey API URL."
     required: false
     default: "https://api.ossprey.com"
-  dry_run_safe:
-    description: "Dry run mode that is always safe, it won't make any POST requests"
+  comment:
+    description: >-
+      Post the verdict as a pull-request comment: "on-failure" (when malware is
+      found or the scan fails to complete, updating an earlier comment to clean
+      once it is fixed), "always", or "never". Needs
+      `permissions: pull-requests: write`.
+    required: false
+    default: "on-failure"
+  github-token:
+    description: "Token used to post the pull-request comment."
+    required: false
+    default: ${{ github.token }}
+  soft-fail:
+    description: "Report findings but let the job pass anyway."
     required: false
     default: "false"
-  dry_run_malicious:
-    description: "Dry run mode that is potentially malicious, it won't make any POST requests"
+  sbom:
+    description: "Optional path to write the full OSSBOM JSON to."
     required: false
-    default: "false"
+    default: ""
+  cli-version:
+    description: >-
+      Version of the Ossprey CLI to install, e.g. "v0.13.0" (the oldest this
+      action supports — it needs `scan --report`). Defaults to the
+      latest release, so new malware detections apply without bumping this
+      action; pin it if you need a byte-identical toolchain.
+    required: false
+    default: "latest"
   verbose:
-    description: "Verbose mode"
+    description: "Verbose CLI logging."
     required: false
     default: "false"
+  dry-run-safe:
+    description: "Skip the API and report a clean verdict. For testing the wiring."
+    required: false
+    default: "false"
+  dry-run-malicious:
+    description: "Skip the API and report a fake finding. For testing the wiring."
+    required: false
+    default: "false"
+
+  # --- Deprecated: the v1 (Python, Docker) input names. Still honoured, and
+  # each one warns. Remove them in the next major version of this action.
+  package:
+    description: "Deprecated: use `path`."
+    required: false
+    default: ""
+  mode:
+    description: >-
+      Deprecated and ignored: the CLI detects python-requirements / pipenv /
+      poetry / npm / yarn / pnpm / uv from the files in the directory.
+    required: false
+    default: ""
+  url:
+    description: "Deprecated: use `api-url`."
+    required: false
+    default: ""
+  github_comments:
+    description: "Deprecated: use `comment` (true maps to on-failure, false to never)."
+    required: false
+    default: ""
   soft_error:
-    description: "Ignore error messages and allow the CICD pipeline to continue"
+    description: "Deprecated: use `soft-fail`."
     required: false
-    default: "false"
+    default: ""
+  dry_run_safe:
+    description: "Deprecated: use `dry-run-safe`."
+    required: false
+    default: ""
+  dry_run_malicious:
+    description: "Deprecated: use `dry-run-malicious`."
+    required: false
+    default: ""
+
+outputs:
+  verdict:
+    description: >-
+      "clean", "malware", "skipped" (quota exhausted — nothing was checked),
+      "disabled" (OSSPREY_SKIP_CI / OSSPREY_CI_CACHE_SCAN_ONLY — nothing was
+      checked, build not failed) or "error" (the scan did not complete).
+    value: ${{ steps.scan.outputs.verdict }}
+  findings-count:
+    description: "Number of malicious packages found."
+    value: ${{ steps.scan.outputs.findings-count }}
+  findings:
+    description: "The malicious packages, as a compact JSON array."
+    value: ${{ steps.scan.outputs.findings }}
+  report:
+    description: "Path to the JSON report written by `ossprey scan --report`."
+    value: ${{ steps.scan.outputs.report }}
+  summary:
+    description: "The verdict rendered as Markdown — the same text posted to the pull request."
+    value: ${{ steps.summary.outputs.markdown }}
+
 runs:
-  using: "docker"
-  image: "Dockerfile"
+  using: "composite"
+  steps:
+    - name: Resolve inputs
+      id: config
+      shell: bash
+      run: "$GITHUB_ACTION_PATH/scripts/resolve-inputs.sh"
+      env:
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_API_URL: ${{ inputs.api-url }}
+        INPUT_COMMENT: ${{ inputs.comment }}
+        INPUT_SOFT_FAIL: ${{ inputs.soft-fail }}
+        INPUT_VERBOSE: ${{ inputs.verbose }}
+        INPUT_DRY_RUN_SAFE: ${{ inputs.dry-run-safe }}
+        INPUT_DRY_RUN_MALICIOUS: ${{ inputs.dry-run-malicious }}
+        LEGACY_PACKAGE: ${{ inputs.package }}
+        LEGACY_MODE: ${{ inputs.mode }}
+        LEGACY_URL: ${{ inputs.url }}
+        LEGACY_GITHUB_COMMENTS: ${{ inputs.github_comments }}
+        LEGACY_SOFT_ERROR: ${{ inputs.soft_error }}
+        LEGACY_DRY_RUN_SAFE: ${{ inputs.dry_run_safe }}
+        LEGACY_DRY_RUN_MALICIOUS: ${{ inputs.dry_run_malicious }}
+
+    - name: Install the Ossprey CLI
+      shell: bash
+      run: "$GITHUB_ACTION_PATH/scripts/install-cli.sh"
+      env:
+        CLI_VERSION: ${{ inputs.cli-version }}
+
+    - name: Scan for malware
+      id: scan
+      shell: bash
+      run: "$GITHUB_ACTION_PATH/scripts/scan.sh"
+      env:
+        SCAN_PATH: ${{ steps.config.outputs.path }}
+        API_URL: ${{ steps.config.outputs.api-url }}
+        INPUT_API_KEY: ${{ inputs.api-key }}
+        SBOM_PATH: ${{ inputs.sbom }}
+        VERBOSE: ${{ steps.config.outputs.verbose }}
+        DRY_RUN_SAFE: ${{ steps.config.outputs.dry-run-safe }}
+        DRY_RUN_MALICIOUS: ${{ steps.config.outputs.dry-run-malicious }}
+
+    - name: Render the verdict
+      id: summary
+      shell: bash
+      run: "$GITHUB_ACTION_PATH/scripts/summary.sh"
+      env:
+        REPORT: ${{ steps.scan.outputs.report }}
+        VERDICT: ${{ steps.scan.outputs.verdict }}
+        SCAN_PATH: ${{ steps.config.outputs.path }}
+
+    - name: Comment on the pull request
+      # Always runs: a PR whose malware was fixed needs its comment updated to
+      # clean just as much as a failing one needs the comment in the first place.
+      if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
+      shell: bash
+      run: "$GITHUB_ACTION_PATH/scripts/comment.sh"
+      env:
+        MODE: ${{ steps.config.outputs.comment }}
+        VERDICT: ${{ steps.scan.outputs.verdict }}
+        BODY_FILE: ${{ steps.summary.outputs.body-file }}
+        GH_TOKEN: ${{ inputs.github-token }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        REPO: ${{ github.repository }}
+        API: ${{ github.api_url }}
+
+    - name: Report the verdict
+      shell: bash
+      run: "$GITHUB_ACTION_PATH/scripts/verdict.sh"
+      env:
+        VERDICT: ${{ steps.scan.outputs.verdict }}
+        FINDINGS_COUNT: ${{ steps.scan.outputs.findings-count }}
+        EXIT_CODE: ${{ steps.scan.outputs.exit-code }}
+        SOFT_FAIL: ${{ steps.config.outputs.soft-fail }}

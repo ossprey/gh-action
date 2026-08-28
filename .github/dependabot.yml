@@ -1,22 +1,14 @@
 version: 2
 updates:
+  # Only this action's own workflow pins. The projects under test/ are
+  # fixtures — deliberately stale dependency sets for the scanner to catalogue
+  # — so no ecosystem is configured for them.
+  #
+  # (`exclude-paths` used to sit here; it is not a dependabot key and did
+  # nothing. Pull requests against the fixtures come from Dependabot *security*
+  # updates, which scan the whole repository regardless of this file; turn
+  # those off in the repository's settings, not here.)
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
-    exclude-paths:
-      - "test/**"
-
-  - package-ecosystem: "pip"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    exclude-paths:
-      - "test/**"
-
-  - package-ecosystem: "docker"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    exclude-paths:
-      - "test/**"

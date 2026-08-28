@@ -4,48 +4,180 @@ on:
   pull_request:
     branches:
       - main
-
   push:
     branches:
       - main
 
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Test OSSPREY GH Action with Python
-        uses: ./  # Reference your local action in the repo
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
-          package: "test/python_simple_math"
+          persist-credentials: false
+
+      # -x follows the `. lib.sh` sources so the helpers are checked too.
+      - name: shellcheck
+        run: shellcheck -x scripts/*.sh test/*.sh test/unit/*.sh
+
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - run: ./test/unit/run.sh
+
+  # End-to-end, against the CLI this action drives. The CLI is built from
+  # source rather than downloaded from a release, so a change there that breaks
+  # the contract between the two repos (the --report JSON keys, above all)
+  # fails here instead of in a user's pipeline. The download path itself is
+  # scripts/install-cli.sh, which every non-CI run exercises.
+  action:
+    name: Action (${{ matrix.case }})
+    runs-on: ubuntu-latest
+    env:
+      OSSPREY_CLI: ${{ github.workspace }}/.ossprey-cli-bin/ossprey
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - case: python
+            path: test/python_simple_math
+          - case: npm
+            path: test/npm_simple_math
+          - case: yarn
+            path: test/yarn_simple_math
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      # A change here often needs a matching one in the CLI — the --report
+      # contract lives in both repos at once. When a branch of the same name
+      # exists over there, build that; otherwise build main. So a coordinated
+      # pair of pull requests tests against each other, and falls back to main
+      # by itself once the CLI side merges, with nothing to remember to undo.
+      #
+      # Only branches that already exist in ossprey-cli can be selected, which
+      # takes push access there — a fork's pull request cannot point this
+      # anywhere.
+      - name: Pick the CLI branch to build
+        id: cli
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          set -euo pipefail
+          ref=main
+          if [ -n "$BRANCH" ] && [ "$BRANCH" != main ] &&
+            git ls-remote --exit-code --heads \
+              https://github.com/ossprey/ossprey-cli.git "$BRANCH" >/dev/null 2>&1; then
+            ref="$BRANCH"
+            echo "::notice::Building ossprey-cli from its companion branch '$ref'."
+          fi
+          echo "ref=$ref" >>"$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          repository: ossprey/ossprey-cli
+          ref: ${{ steps.cli.outputs.ref }}
+          path: .ossprey-cli
+          persist-credentials: false
+
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: .ossprey-cli/go.mod
+          cache-dependency-path: .ossprey-cli/go.sum
+
+      - name: Build the CLI
+        run: |
+          mkdir -p "$(dirname "$OSSPREY_CLI")"
+          go build -o "$OSSPREY_CLI" ./cmd/ossprey
+        working-directory: .ossprey-cli
+
+      - name: Scan a clean project
+        id: clean
+        uses: ./
+        with:
+          path: ${{ matrix.path }}
+          dry-run-safe: true
+          comment: never
+
+      - name: Scan a project with malware
+        id: malware
+        uses: ./
+        with:
+          path: ${{ matrix.path }}
+          dry-run-malicious: true
+          # soft-fail so the job survives the finding and can assert on it.
+          soft-fail: true
+          comment: never
+
+      - name: Assert the outputs
+        env:
+          CLEAN_VERDICT: ${{ steps.clean.outputs.verdict }}
+          CLEAN_COUNT: ${{ steps.clean.outputs.findings-count }}
+          MALWARE_VERDICT: ${{ steps.malware.outputs.verdict }}
+          MALWARE_COUNT: ${{ steps.malware.outputs.findings-count }}
+          MALWARE_FINDINGS: ${{ steps.malware.outputs.findings }}
+          MALWARE_SUMMARY: ${{ steps.malware.outputs.summary }}
+        run: |
+          set -euo pipefail
+          fail=0
+          check() {
+            if [ "$2" = "$3" ]; then
+              echo "  ✓ $1"
+            else
+              echo "  ✗ $1: got '$2', want '$3'"
+              fail=1
+            fi
+          }
+          check "clean verdict" "$CLEAN_VERDICT" clean
+          check "clean findings" "$CLEAN_COUNT" 0
+          check "malware verdict" "$MALWARE_VERDICT" malware
+          check "malware findings" "$MALWARE_COUNT" 1
+          # The findings output must be parseable JSON naming a package —
+          # that is the whole contract downstream steps build on.
+          name="$(printf '%s' "$MALWARE_FINDINGS" | jq -er '.[0].name')"
+          [ -n "$name" ] && echo "  ✓ findings names $name"
+          case "$MALWARE_SUMMARY" in
+            *"malware detected"*) echo "  ✓ summary renders the verdict" ;;
+            *)
+              echo "  ✗ summary did not render the verdict"
+              fail=1
+              ;;
+          esac
+          exit "$fail"
+
+      # The v1/v2 snake_case inputs must keep working: upgrading should be a
+      # one-line change to `uses:`, not a rewrite of everyone's workflow. One
+      # case is enough — the mapping doesn't vary by ecosystem.
+      - name: Scan with the v2 input names
+        id: v2
+        if: matrix.case == 'python'
+        uses: ./
+        with:
+          package: ${{ matrix.path }}
           mode: "python-requirements"
           github_comments: false
           verbose: true
-          dry_run_safe: true # Temp until we add API keys back in 
-        env:
-          API_KEY: ${{ secrets.OSSPREY_API_KEY }}
-
-      - name: Test OSSPREY GH Action with NPM
-        uses: ./  # Reference your local action in the repo
-        with:
-          package: "test/npm_simple_math"
-          mode: "npm"
           dry_run_safe: true
-          github_comments: false
-          verbose: true
-        env:
-          API_KEY: ${{ secrets.OSSPREY_API_KEY }}
 
-      - name: Test OSSPREY GH Action with NPM
-        uses: ./  # Reference your local action in the repo
-        with:
-          package: "test/yarn_simple_math"
-          mode: "yarn"
-          dry_run_safe: true
-          github_comments: false
-          verbose: true
+      - name: Assert the v2 verdict
+        if: matrix.case == 'python'
         env:
-          API_KEY: ${{ secrets.OSSPREY_API_KEY }}
+          VERDICT: ${{ steps.v2.outputs.verdict }}
+        run: |
+          [ "$VERDICT" = clean ] || {
+            echo "got '$VERDICT', want clean"
+            exit 1
+          }
