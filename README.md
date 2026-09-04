@@ -87,11 +87,18 @@ the fix rather than a stale 🚨.
 
 | Output | Description |
 |---|---|
-| `verdict` | `clean`, `malware`, `skipped`, `disabled` or `error`. |
+| `verdict` | `clean`, `malware`, `informational`, `skipped`, `disabled` or `error`. |
 | `findings-count` | Number of malicious packages. |
+| `informational-count` | Number of informational findings. |
 | `findings` | The malicious packages, as a compact JSON array. |
 | `report` | Path to the JSON report from `ossprey scan --report`. |
 | `summary` | The verdict as Markdown — the same text posted to the pull request. |
+
+`informational` means the scan found something worth telling you about, but
+nothing at or above the severity Ossprey fails on — for example a package npm
+has since removed for malware, where there is no longer any code to install.
+The job passes and the summary lists what was found. Unlike `skipped` this
+verdict does mean the scan ran and checked everything.
 
 `skipped` means your Ossprey quota was exhausted and **nothing was checked**.
 It is not a clean verdict; the job passes (a quota limit shouldn't break your

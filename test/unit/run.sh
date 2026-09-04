@@ -143,6 +143,53 @@ echo "summary.sh"
 )
 
 (
+  out="$workdir/out5i"
+  : >"$out"
+  RUNNER_TEMP="$workdir" GITHUB_OUTPUT="$out" \
+    VERDICT="informational" REPORT="$fixtures/report-informational.json" SCAN_PATH="app" \
+    "$scripts/summary.sh" >/dev/null
+  md="$(output "$out" markdown)"
+  assert_contains "informational: heading" "$md" "informational findings"
+  assert_contains "informational: count" "$md" "**1 informational finding**"
+  # shellcheck disable=SC2016  # backticks are Markdown, not a subshell
+  assert_contains "informational: names the package" "$md" '`left-bad`'
+  assert_contains "informational: says it does not fail" "$md" "do **not** fail the build"
+  assert_not_contains "informational: never says malware detected" "$md" "malware detected"
+  assert_not_contains "informational: never says clean" "$md" "no malware found"
+)
+
+# A mixed scan must count only the malicious packages, or the comment overstates
+# what was found.
+(
+  out="$workdir/out5m"
+  : >"$out"
+  RUNNER_TEMP="$workdir" GITHUB_OUTPUT="$out" \
+    VERDICT="malware" REPORT="$fixtures/report-mixed.json" SCAN_PATH="app" \
+    "$scripts/summary.sh" >/dev/null
+  md="$(output "$out" markdown)"
+  assert_contains "mixed: heading" "$md" "malware detected"
+  assert_contains "mixed: counts only the malicious" "$md" "**2 malicious packages**"
+  assert_not_contains "mixed: does not count the informational" "$md" "**3 malicious packages**"
+  # shellcheck disable=SC2016
+  assert_not_contains "mixed: informational not in the malware table" "$md" '`left-bad`'
+)
+
+# A CLI released before the informational array existed omits the key entirely.
+# The action has to keep working against it, because the action and the CLI are
+# versioned separately and users pin whatever they pin.
+(
+  out="$workdir/out5l"
+  : >"$out"
+  RUNNER_TEMP="$workdir" GITHUB_OUTPUT="$out" \
+    VERDICT="malware" REPORT="$fixtures/report-legacy-cli.json" SCAN_PATH="app" \
+    "$scripts/summary.sh" >/dev/null
+  md="$(output "$out" markdown)"
+  assert_contains "legacy cli: still renders the malware verdict" "$md" "**2 malicious packages**"
+  # shellcheck disable=SC2016  # backticks are Markdown, not a subshell
+  assert_contains "legacy cli: still names the package" "$md" '`requests`'
+)
+
+(
   out="$workdir/out6"
   : >"$out"
   RUNNER_TEMP="$workdir" GITHUB_OUTPUT="$out" \
@@ -221,6 +268,22 @@ echo "verdict.sh"
 (
   VERDICT="error" EXIT_CODE=1 "$scripts/verdict.sh" >/dev/null 2>&1
   assert_eq "error exits 1" "$?" "1"
+)
+(
+  # Below the severity floor: reported, never a reason to fail someone's build.
+  VERDICT="informational" INFORMATIONAL_COUNT=1 "$scripts/verdict.sh" >/dev/null 2>&1
+  assert_eq "informational exits 0" "$?" "0"
+)
+(
+  log="$(VERDICT="informational" INFORMATIONAL_COUNT=1 "$scripts/verdict.sh" 2>&1)"
+  assert_contains "informational warns rather than erroring" "$log" "::warning::"
+  assert_not_contains "informational never claims the scan failed" "$log" "did not complete"
+)
+(
+  # The regression this whole change exists to prevent: before the verdict was
+  # recognised it fell through to the error branch and failed the job.
+  VERDICT="informational" "$scripts/verdict.sh" >/dev/null 2>&1
+  assert_eq "informational with no count still exits 0" "$?" "0"
 )
 (
   # The rollout kill switch exists to stop scanning, not to stop the build.

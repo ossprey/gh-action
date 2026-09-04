@@ -99,13 +99,18 @@ inputs:
 outputs:
   verdict:
     description: >-
-      "clean", "malware", "skipped" (quota exhausted — nothing was checked),
-      "disabled" (OSSPREY_SKIP_CI / OSSPREY_CI_CACHE_SCAN_ONLY — nothing was
-      checked, build not failed) or "error" (the scan did not complete).
+      "clean", "malware", "informational" (only findings below the severity
+      floor — reported, build not failed), "skipped" (quota exhausted — nothing
+      was checked), "disabled" (OSSPREY_SKIP_CI / OSSPREY_CI_CACHE_SCAN_ONLY —
+      nothing was checked, build not failed) or "error" (the scan did not
+      complete).
     value: ${{ steps.scan.outputs.verdict }}
   findings-count:
     description: "Number of malicious packages found."
     value: ${{ steps.scan.outputs.findings-count }}
+  informational-count:
+    description: "Number of informational findings — reported, but not a reason to fail."
+    value: ${{ steps.scan.outputs.informational-count }}
   findings:
     description: "The malicious packages, as a compact JSON array."
     value: ${{ steps.scan.outputs.findings }}
@@ -188,5 +193,6 @@ runs:
       env:
         VERDICT: ${{ steps.scan.outputs.verdict }}
         FINDINGS_COUNT: ${{ steps.scan.outputs.findings-count }}
+        INFORMATIONAL_COUNT: ${{ steps.scan.outputs.informational-count }}
         EXIT_CODE: ${{ steps.scan.outputs.exit-code }}
         SOFT_FAIL: ${{ steps.config.outputs.soft-fail }}

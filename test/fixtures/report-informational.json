@@ -1,0 +1,20 @@
+{
+  "verdict": "informational",
+  "project": "npm_simple_math",
+  "path": "/github/workspace/test/npm_simple_math",
+  "components": 4,
+  "findings": [],
+  "informational": [
+    {
+      "purl": "pkg:npm/left-bad@0.0.1-security",
+      "ecosystem": "npm",
+      "name": "left-bad",
+      "version": "0.0.1-security",
+      "id": "OSSPREY-2026-0040",
+      "type": "Malware",
+      "severity": "Info",
+      "description": "This package was previously identified as malicious and removed from NPM",
+      "reference": "Unknown"
+    }
+  ]
+}

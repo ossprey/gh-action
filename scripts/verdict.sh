@@ -8,6 +8,7 @@ set -euo pipefail
 
 verdict="${VERDICT:-error}"
 count="${FINDINGS_COUNT:-0}"
+info_count="${INFORMATIONAL_COUNT:-0}"
 
 case "$verdict" in
   clean)
@@ -24,6 +25,12 @@ case "$verdict" in
     # A deliberate no-scan must never fail the build — that is the whole point
     # of the kill switch. The warning is what keeps it from passing silently.
     warn "Ossprey scanning is disabled for this run — nothing was checked."
+    exit 0
+    ;;
+  informational)
+    # Reported, deliberately not failed: the finding is below the severity floor
+    # the CLI fails on. Warning rather than silence, because something was found.
+    warn "Ossprey found $info_count informational finding(s) — see the job summary. Nothing blocking."
     exit 0
     ;;
   malware)
