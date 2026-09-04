@@ -36,6 +36,7 @@ Do not switch the trigger to pull_request_target to work around this — that ha
   fi
   set_output verdict error
   set_output findings-count 0
+  set_output informational-count 0
   set_output findings "[]"
   set_output report ""
   set_output exit-code 1
@@ -66,20 +67,24 @@ if [ -s "$report" ]; then
   verdict="$(jq -r '.verdict // "error"' "$report")"
   findings="$(jq -c '.findings // []' "$report")"
   count="$(jq -r '.findings | length' "$report")"
+  info_count="$(jq -r '(.informational // []) | length' "$report")"
 elif [ "$code" -eq 0 ]; then
   verdict="disabled"
   findings="[]"
   count=0
+  info_count=0
   report=""
 else
   verdict="error"
   findings="[]"
   count=0
+  info_count=0
   report=""
 fi
 
 set_output verdict "$verdict"
 set_output findings "$findings"
 set_output findings-count "$count"
+set_output informational-count "$info_count"
 set_output report "$report"
 set_output exit-code "$code"

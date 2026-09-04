@@ -18,11 +18,13 @@ DASHBOARD='https://dashboard.ossprey.com'
 
 count=0
 components=0
+info_count=0
 skip_message=""
 have_report=false
 if [ -n "$report" ] && [ -s "$report" ]; then
   have_report=true
   count="$(jq -r '.findings | length' "$report")"
+  info_count="$(jq -r '.informational | length' "$report")"
   components="$(jq -r '.components // 0' "$report")"
   skip_message="$(jq -r '
     [ .skipped.message // "",
@@ -41,9 +43,17 @@ case "$verdict" in
     body+="## 🚨 Ossprey — malware detected"$'\n\n'
     body+="**$count malicious $(plural "$count" package packages)** in \`$scan_path\`:"$'\n\n'
     if [ "$have_report" = true ]; then
-      body+="$(jq -r -f "$here/findings-table.jq" "$report")"$'\n\n'
+      body+="$(jq -r --arg section findings -f "$here/findings-table.jq" "$report")"$'\n\n'
     fi
     body+="Remove these packages — and anything that depends on them — before merging."$'\n'
+    ;;
+  informational)
+    body+="## ℹ️ Ossprey — informational findings"$'\n\n'
+    body+="**$info_count informational $(plural "$info_count" finding findings)** in \`$scan_path\`, and no malicious packages:"$'\n\n'
+    if [ "$have_report" = true ]; then
+      body+="$(jq -r --arg section informational -f "$here/findings-table.jq" "$report")"$'\n\n'
+    fi
+    body+="These are recorded for your awareness and do **not** fail the build."$'\n'
     ;;
   clean)
     body+="## ✅ Ossprey — no malware found"$'\n\n'

@@ -11,7 +11,7 @@ def dash: if . == "" then "—" else . end;
 
 "| Package | Version | Ecosystem | Detail |",
 "| --- | --- | --- | --- |",
-(.findings[]
+((.[$section] // [])[]
   | "| `" + (.name | clean | dash)
   + "` | `" + (.version | clean | dash)
   + "` | " + (.ecosystem | clean | dash)
