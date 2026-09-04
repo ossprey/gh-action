@@ -174,6 +174,21 @@ echo "summary.sh"
   assert_not_contains "mixed: informational not in the malware table" "$md" '`left-bad`'
 )
 
+# A CLI released before the informational array existed omits the key entirely.
+# The action has to keep working against it, because the action and the CLI are
+# versioned separately and users pin whatever they pin.
+(
+  out="$workdir/out5l"
+  : >"$out"
+  RUNNER_TEMP="$workdir" GITHUB_OUTPUT="$out" \
+    VERDICT="malware" REPORT="$fixtures/report-legacy-cli.json" SCAN_PATH="app" \
+    "$scripts/summary.sh" >/dev/null
+  md="$(output "$out" markdown)"
+  assert_contains "legacy cli: still renders the malware verdict" "$md" "**2 malicious packages**"
+  # shellcheck disable=SC2016  # backticks are Markdown, not a subshell
+  assert_contains "legacy cli: still names the package" "$md" '`requests`'
+)
+
 (
   out="$workdir/out6"
   : >"$out"
