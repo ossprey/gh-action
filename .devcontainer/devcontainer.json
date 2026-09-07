@@ -1,5 +1,6 @@
 {
     "name": "Ossprey",
+    "image": "ghcr.io/ossprey/devcontainer:latest",
     "customizations": {
         "vscode": {
             "extensions": [
