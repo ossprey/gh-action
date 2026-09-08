@@ -1,8 +1,10 @@
 version: 2
 updates:
   # Only this action's own workflow pins. The projects under test/ are
-  # fixtures — deliberately stale dependency sets for the scanner to catalogue
-  # — so no ecosystem is configured for them.
+  # fixtures — one current, well-trusted dependency each, there so the CLI has
+  # a component to catalogue — so no ecosystem is configured for them. They
+  # used to hold a stale set with a jest tree behind it, which is what made
+  # Dependabot security alerts against test/ a standing background noise.
   #
   # (`exclude-paths` used to sit here; it is not a dependabot key and did
   # nothing. Pull requests against the fixtures come from Dependabot *security*
