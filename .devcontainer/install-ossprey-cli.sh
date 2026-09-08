@@ -80,23 +80,35 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 INSTALLER="$(mktemp)"
+# Replaced below once the root-owned staging copy exists, so both are cleaned up.
 trap 'rm -f "$INSTALLER"' EXIT
 
 curl -fsSL -o "$INSTALLER" \
     "https://github.com/ossprey/ossprey-cli/releases/download/${VERSION}/install.sh"
 
-# Before it is executed, and before the sudo below, so a substituted asset never
-# runs at all rather than running as root and being noticed afterwards.
-if ! printf '%s  %s\n' "$EXPECTED_SHA" "$INSTALLER" | sha256sum -c - > /dev/null 2>&1; then
+# Stage the installer somewhere only root can write BEFORE verifying it, so the
+# bytes that were checked are necessarily the bytes that run. Verifying a file
+# in the calling user's temp directory and then executing it under sudo leaves a
+# window in which another process running as that user could swap the contents
+# between the check and the use (CWE-367). /usr/local/lib is root-owned, so an
+# unprivileged user cannot pre-create or redirect this path.
+STAGED_DIR=/usr/local/lib/ossprey-install
+STAGED="$STAGED_DIR/install.sh"
+$SUDO install -d -m 0700 -o root -g root "$STAGED_DIR"
+$SUDO install -m 0400 -o root -g root "$INSTALLER" "$STAGED"
+trap 'rm -f "$INSTALLER"; $SUDO rm -rf "$STAGED_DIR"' EXIT
+
+# Read through sudo because the staged copy is root-only, which is the point.
+if ! printf '%s  %s\n' "$EXPECTED_SHA" "$STAGED" | $SUDO sha256sum -c - > /dev/null 2>&1; then
     echo "install-ossprey-cli: install.sh for ${VERSION} does not match its pinned sha256." >&2
     echo "install-ossprey-cli:   expected $EXPECTED_SHA" >&2
-    echo "install-ossprey-cli:   actual   $(sha256sum "$INSTALLER" | cut -d' ' -f1)" >&2
+    echo "install-ossprey-cli:   actual   $($SUDO sha256sum "$STAGED" | cut -d' ' -f1)" >&2
     echo "install-ossprey-cli: the release asset changed under the tag, or the download was tampered with. Not executing it." >&2
     exit 1
 fi
 
 # `env` rather than a bare assignment: sudo does not pass VAR=value through.
-$SUDO env OSSPREY_VERSION="$VERSION" sh "$INSTALLER"
+$SUDO env OSSPREY_VERSION="$VERSION" sh "$STAGED"
 
 # --all also shims the managers this image does not ship (pnpm, yarn), so a
 # project that installs one later is covered without a rebuild. The shims are
