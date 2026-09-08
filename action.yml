@@ -44,7 +44,7 @@ inputs:
     default: ""
   cli-version:
     description: >-
-      Version of the Ossprey CLI to install, e.g. "v0.13.0" (the oldest this
+      Version of the Ossprey CLI to install, e.g. "v0.15.0" (the oldest this
       action supports — it needs `scan --report`). Defaults to the
       latest release, so new malware detections apply without bumping this
       action; pin it if you need a byte-identical toolchain.

@@ -36,7 +36,7 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v4
-      - uses: ossprey/gh-action@v3
+      - uses: ossprey/gh-action@v3.0.0
         with:
           api-key: ${{ secrets.OSSPREY_API_KEY }}
 ```
@@ -118,7 +118,7 @@ checked nothing block the merge â€” reasonable if this action gates a release â€
 read the verdict and fail on it yourself:
 
 ```yaml
-- uses: ossprey/gh-action@v3
+- uses: ossprey/gh-action@v3.0.0
   id: ossprey
   with:
     api-key: ${{ secrets.OSSPREY_API_KEY }}
@@ -141,7 +141,7 @@ proves integrity, not provenance.
 Use the outputs to do your own thing with a finding:
 
 ```yaml
-- uses: ossprey/gh-action@v3
+- uses: ossprey/gh-action@v3.0.0
   id: ossprey
   with:
     api-key: ${{ secrets.OSSPREY_API_KEY }}
