@@ -11,8 +11,16 @@ javascript_simple_math
 ├── test
 │   └── simpleMath.test.js # Unit tests for the math functions
 ├── package.json          # Project metadata and dependencies
+├── yarn.lock             # Resolved dependency versions
 └── README.md             # Project documentation
 ```
+
+## Dependencies
+
+The one dependency, `@ossprey/test-package`, is a benign package we publish and
+the Ossprey API deliberately flags as malicious. It exists so a scan of this
+fixture has something to catalogue, and so a live scan reaches a real malware
+verdict. It is not used by the code below.
 
 ## Installation
 
@@ -26,7 +34,7 @@ cd javascript_simple_math
 Then, install the necessary dependencies:
 
 ```bash
-npm install
+yarn install
 ```
 
 ## Running Tests
@@ -34,7 +42,7 @@ npm install
 To run the unit tests, use the following command:
 
 ```bash
-npm test
+yarn test
 ```
 
 This will execute the tests defined in `test/simpleMath.test.js` and display the results in the console.

@@ -32,7 +32,7 @@ scripts/              the steps (bash); lib.sh is sourced, never executed
 scripts/findings-table.jq   the Markdown table
 test/unit/run.sh      unit tests — no network, no runner, no API
 test/test_gh_action.sh      the whole flow, locally
-test/*_simple_math/   scan fixtures (deliberately stale deps — not our deps)
+test/*_simple_math/   scan fixtures (a dependency each, current — not our deps)
 ```
 
 ## Commands
@@ -104,6 +104,18 @@ Things that are the way they are on purpose:
   (`resolve-inputs.sh`). Upgrading should be a one-line change to `uses:`.
   `mode` is accepted and *ignored*: the CLI detects the ecosystem from the
   files on disk. `test/unit/run.sh` and the `legacy-inputs` CI job pin this.
+- **The scan fixtures carry one dependency each, kept current.** The
+  scanner needs something to catalogue, and nothing more: `requests` for
+  Python, `@ossprey/test-package` for npm and yarn — both zero-drama, the
+  latter our own benign package that the API flags as malicious, so a `--live`
+  run against the JavaScript fixtures reaches a real malware verdict rather
+  than a simulated one. They used to be a stale set with a jest tree behind it,
+  which bought no coverage — the CI cases run under `--dry-run-safe` /
+  `--dry-run-malicious`, so the verdict never depended on what was in the
+  lockfile — and cost a standing pile of Dependabot security alerts against
+  files that are not this action's supply chain. Do not add dependencies here
+  to make a fixture look realistic; the SBOM only needs a component.
+
 - **A missing API key gets an explanation, not a stack trace.** On a
   `pull_request` run the error is specifically about fork secrets and prints
   the `if:` guard to add — and says not to reach for `pull_request_target`,

@@ -1,2 +1,7 @@
-requests==2.26.0
-numpy==2.1.0
+# Fixture dependencies for the scanner, not this action's own.
+#
+# Deliberately one small, well-maintained, widely-trusted package: enough for
+# the CLI to build an SBOM from, few enough that a published CVE against it is
+# rare and a one-line bump when it happens. An older, larger set used to sit
+# here and did nothing but generate Dependabot noise.
+requests==2.34.2
