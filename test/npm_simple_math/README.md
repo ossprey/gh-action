@@ -11,8 +11,16 @@ javascript_simple_math
 ├── test
 │   └── simpleMath.test.js # Unit tests for the math functions
 ├── package.json          # Project metadata and dependencies
+├── package-lock.json     # Resolved dependency versions
 └── README.md             # Project documentation
 ```
+
+## Dependencies
+
+The one dependency, `@ossprey/test-package`, is a benign package we publish and
+the Ossprey API deliberately flags as malicious. It exists so a scan of this
+fixture has something to catalogue, and so a live scan reaches a real malware
+verdict. It is not used by the code below.
 
 ## Installation
 
