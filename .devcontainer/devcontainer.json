@@ -11,5 +11,44 @@
             ]
         }
     },
+    /* No `image` here on purpose. This repository is public, so it cannot use
+       ghcr.io/ossprey/devcontainer -- that package is private and an outside
+       contributor's codespace could not pull it. The base image stays whatever
+       the platform provides by default, and postCreateCommand installs the
+       Ossprey CLI from the ossprey-cli releases, which are public.
+
+       .devcontainer/install-ossprey-cli.sh is a VERBATIM COPY of
+       scripts/install-ossprey-cli.sh in ossprey/devcontainer -- byte for byte,
+       so `sha256sum` on the two is the drift check. Fix bugs there and re-copy;
+       do not edit this repo's copy in place.
+
+       Report-only, matching the shared image: an install is scanned but never
+       blocked, so a container nobody has logged into still works. Run
+       `ossprey login` once for findings to reach the dashboard; clear
+       OSSPREY_CI_CACHE_SCAN_ONLY to enforce.
+
+       Both Ossprey pins are required and move together. The tag is pinned
+       rather than `latest` because the installer runs as root, so an unpinned
+       URL would execute whatever it served at the time. The digest is pinned
+       too because GitHub release assets are MUTABLE: the install.sh behind a
+       fixed tag can be deleted and re-uploaded with different content. The
+       script verifies the bytes before executing them and refuses to run
+       without either pin, so bump both together -- copy the values from
+       ossprey/devcontainer's Dockerfile. */
+    "containerEnv": {
+        "OSSPREY_CLI_VERSION": "v0.17.0",
+        "OSSPREY_CLI_SHA256": "bb3203c44b4ea50cceb91f8edcea8574be763e85030380206140e4d02cd604e8",
+        "OSSPREY_SHIM_DIR": "/usr/local/ossprey/shims",
+        "OSSPREY_CI_CACHE_SCAN_ONLY": "1"
+    },
+    /* Load bearing, not leftover: the script installs the shims with
+       --no-path, and containerEnv is layered under remoteEnv, so anything a
+       devcontainer feature prepends to PATH would otherwise sit ahead of the
+       shims -- CLI installed, nothing intercepted. `ossprey shim status` is
+       the check. */
+    "remoteEnv": {
+        "PATH": "/usr/local/ossprey/shims:${containerEnv:PATH}"
+    },
+    "postCreateCommand": "bash .devcontainer/install-ossprey-cli.sh",
     "postStartCommand": "bash .devcontainer/startup.sh"
 }
