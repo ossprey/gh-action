@@ -48,14 +48,20 @@ OSSPREY_CLI=/path/to/ossprey ./test/test_gh_action.sh # against a local CLI buil
 
 The CLI is the contract. `scripts/scan.sh` runs `ossprey scan --report <file>`
 and everything downstream reads that JSON: `verdict` (`clean` / `malware` /
-`skipped`), `components`, and `findings[]` pre-split into `purl`, `name`,
-`version`, `ecosystem`, `description`. **Those key names are a cross-repo
-contract** — `ossprey-cli`'s `internal/scan/report.go` writes them and
-`test/smoke/report_smoke_test.go` there pins them. The action needs a CLI
-carrying `scan --report`, which landed after `v0.14.0`. `install-cli.sh` checks
-for the flag itself rather than comparing versions — a hardcoded floor is one
-more number to keep in sync with a cadence this repo does not control — and
-says so plainly rather than letting the scan die on "unknown flag".
+`informational` / `skipped`), `components`, and `findings[]` pre-split into
+`purl`, `name`, `version`, `ecosystem`, `description`. **The action grades
+nothing itself** — which findings fail is decided by the CLI against the
+account's failing severity floor, served on the scan response (OSS-1994). The
+`fail-on` input is passed straight through to `--fail-on` and validated here
+only so a typo fails before the install rather than on "unknown flag".
+
+**Those key names are a cross-repo contract** — `ossprey-cli`'s
+`internal/scan/report.go` writes them and `test/smoke/report_smoke_test.go`
+there pins them. The action needs a CLI carrying `scan --report`, which landed
+after `v0.14.0`. `install-cli.sh` checks for the flag itself rather than
+comparing versions — a hardcoded floor is one more number to keep in sync with
+a cadence this repo does not control — and says so plainly rather than letting
+the scan die on "unknown flag".
 
 When no report was written at all the action supplies a verdict of its own,
 choosing between two by the CLI's exit code: `disabled` on exit 0 (a deliberate
