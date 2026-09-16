@@ -117,6 +117,44 @@ echo "resolve-inputs.sh"
   fi
 )
 
+# An empty fail-on means the account's own floor applies, which is the common
+# case and must not turn into a flag the CLI then treats as an override.
+(
+  out="$workdir/out5"
+  : >"$out"
+  GITHUB_OUTPUT="$out" "$scripts/resolve-inputs.sh" >/dev/null
+  assert_eq "fail-on: unset stays empty" "$(output "$out" fail-on)" ""
+)
+
+(
+  out="$workdir/out6"
+  : >"$out"
+  GITHUB_OUTPUT="$out" INPUT_FAIL_ON="  critical " "$scripts/resolve-inputs.sh" >/dev/null
+  assert_eq "fail-on: canonicalised" "$(output "$out" fail-on)" "Critical"
+)
+
+# Every level, in both directions from the default: OSS-1990 retired the rule
+# that the floor could only ever be lowered.
+(
+  out="$workdir/out7"
+  : >"$out"
+  for level in Info Low Medium High Critical; do
+    : >"$out"
+    GITHUB_OUTPUT="$out" INPUT_FAIL_ON="$level" "$scripts/resolve-inputs.sh" >/dev/null
+    assert_eq "fail-on: $level accepted" "$(output "$out" fail-on)" "$level"
+  done
+)
+
+(
+  out="$workdir/out8"
+  : >"$out"
+  if GITHUB_OUTPUT="$out" INPUT_FAIL_ON="Bananas" "$scripts/resolve-inputs.sh" >/dev/null 2>&1; then
+    fail_test "invalid fail-on is rejected" "expected a non-zero exit"
+  else
+    ok "invalid fail-on is rejected"
+  fi
+)
+
 echo "summary.sh"
 (
   out="$workdir/out5"

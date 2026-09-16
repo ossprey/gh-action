@@ -73,6 +73,7 @@ The comment is sticky: the same comment is edited on every run, and flips to
 | `comment` | `on-failure` | Pull-request comment: `always`, `on-failure` (malware or a failed scan), or `never`. |
 | `github-token` | `${{ github.token }}` | Token used to post that comment. |
 | `soft-fail` | `false` | Report findings but let the job pass. |
+| `fail-on` | account setting | Fail on findings graded at or above this severity: `Info`, `Low`, `Medium`, `High` or `Critical`. |
 | `sbom` | — | Path to write the full OSSBOM JSON to. |
 | `cli-version` | `latest` | Ossprey CLI version, e.g. `v0.15.0`. Must be a release carrying `scan --report`; `v0.14.0` and earlier predate it. |
 | `verbose` | `false` | Verbose CLI logging. |
@@ -82,6 +83,30 @@ The comment is sticky: the same comment is edited on every run, and flips to
 `comment: on-failure` never opens a comment on a clean run, but it does update
 one that is already there — so a pull request that removed its malware shows
 the fix rather than a stale 🚨.
+
+## What fails the build
+
+Every finding is reported. Whether it *fails* the build is a severity floor: a
+finding graded at or above the floor fails, one below it is a warning, and a
+finding Ossprey could not grade fails whatever the floor is set to.
+
+The floor is your **account's** setting, served with the scan, so changing it
+once in the dashboard changes every repository and every other integration with
+it. It defaults to `Low`, which makes `Info` the only grade reported without
+failing.
+
+`fail-on` overrides it for one workflow, in either direction:
+
+```yaml
+  - uses: ossprey/gh-action@v3
+    with:
+      api-key: ${{ secrets.OSSPREY_API_KEY }}
+      fail-on: Critical   # a High finding is reported, not blocking
+```
+
+Prefer the account setting when every repository should agree. `fail-on` needs
+a CLI carrying `scan --fail-on`, so leave `cli-version` at `latest` or pin one
+new enough.
 
 ## Outputs
 
@@ -95,8 +120,8 @@ the fix rather than a stale 🚨.
 | `summary` | The verdict as Markdown — the same text posted to the pull request. |
 
 `informational` means the scan found something worth telling you about, but
-nothing at or above the severity Ossprey fails on — for example a package npm
-has since removed for malware, where there is no longer any code to install.
+nothing at or above the failing severity floor — for example a package npm has
+since removed for malware, where there is no longer any code to install.
 The job passes and the summary lists what was found. Unlike `skipped` this
 verdict does mean the scan ran and checked everything.
 

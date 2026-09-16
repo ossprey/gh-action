@@ -38,6 +38,16 @@ inputs:
     description: "Report findings but let the job pass anyway."
     required: false
     default: "false"
+  fail-on:
+    description: >-
+      Fail on findings graded at or above this severity: "Info", "Low",
+      "Medium", "High" or "Critical". Leave empty to use your account's
+      failing severity floor, which is where this belongs if every repository
+      should agree. Overrides it in either direction, so "Critical" lets a High
+      finding through. Needs a CLI with `scan --fail-on`, so leave `cli-version`
+      at "latest" or pin one new enough.
+    required: false
+    default: ""
   sbom:
     description: "Optional path to write the full OSSBOM JSON to."
     required: false
@@ -45,9 +55,11 @@ inputs:
   cli-version:
     description: >-
       Version of the Ossprey CLI to install, e.g. "v0.15.0" (the oldest this
-      action supports — it needs `scan --report`). Defaults to the
-      latest release, so new malware detections apply without bumping this
-      action; pin it if you need a byte-identical toolchain.
+      action supports — it needs `scan --report`). Your account's failing
+      severity floor needs a newer one; an older CLI grades at a fixed Low, and
+      `fail-on` needs newer still. Defaults to the latest release, so new
+      malware detections apply without bumping this action; pin it if you need
+      a byte-identical toolchain.
     required: false
     default: "latest"
   verbose:
@@ -99,8 +111,9 @@ inputs:
 outputs:
   verdict:
     description: >-
-      "clean", "malware", "informational" (only findings below the severity
-      floor — reported, build not failed), "skipped" (quota exhausted — nothing
+      "clean", "malware", "informational" (only findings below your account's
+      failing severity floor — reported, build not failed), "skipped"
+      (quota exhausted — nothing
       was checked), "disabled" (OSSPREY_SKIP_CI / OSSPREY_CI_CACHE_SCAN_ONLY —
       nothing was checked, build not failed) or "error" (the scan did not
       complete).
@@ -136,6 +149,7 @@ runs:
         INPUT_VERBOSE: ${{ inputs.verbose }}
         INPUT_DRY_RUN_SAFE: ${{ inputs.dry-run-safe }}
         INPUT_DRY_RUN_MALICIOUS: ${{ inputs.dry-run-malicious }}
+        INPUT_FAIL_ON: ${{ inputs.fail-on }}
         LEGACY_PACKAGE: ${{ inputs.package }}
         LEGACY_MODE: ${{ inputs.mode }}
         LEGACY_URL: ${{ inputs.url }}
@@ -162,6 +176,7 @@ runs:
         VERBOSE: ${{ steps.config.outputs.verbose }}
         DRY_RUN_SAFE: ${{ steps.config.outputs.dry-run-safe }}
         DRY_RUN_MALICIOUS: ${{ steps.config.outputs.dry-run-malicious }}
+        FAIL_ON: ${{ steps.config.outputs.fail-on }}
 
     - name: Render the verdict
       id: summary

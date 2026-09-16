@@ -48,6 +48,9 @@ is_true "${VERBOSE:-}" && args+=(--verbose)
 is_true "${DRY_RUN_SAFE:-}" && args+=(--dry-run-safe)
 is_true "${DRY_RUN_MALICIOUS:-}" && args+=(--dry-run-malicious)
 [ -n "${SBOM_PATH:-}" ] && args+=(-o "$SBOM_PATH")
+# Empty means the account's own floor applies, which is the common case; the
+# flag is only passed when this workflow deliberately overrides it.
+[ -n "${FAIL_ON:-}" ] && args+=(--fail-on "$FAIL_ON")
 
 OSSPREY_API_KEY="$key" ossprey "${args[@]}"
 code=$?

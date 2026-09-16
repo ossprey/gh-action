@@ -65,6 +65,21 @@ if is_true "$dry_safe" && is_true "$dry_malicious"; then
   die "dry-run-safe and dry-run-malicious are mutually exclusive"
 fi
 
+# Validated here rather than left to the CLI: a typo should fail in a second,
+# before the install and the catalogue, and with a message naming the input.
+# Canonicalised too, so the value the CLI records is the one we document.
+fail_on=""
+if [ -n "${INPUT_FAIL_ON:-}" ]; then
+  case "$(printf '%s' "$INPUT_FAIL_ON" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')" in
+    info) fail_on="Info" ;;
+    low) fail_on="Low" ;;
+    medium) fail_on="Medium" ;;
+    high) fail_on="High" ;;
+    critical) fail_on="Critical" ;;
+    *) die "invalid 'fail-on' input: '$INPUT_FAIL_ON' (expected Info, Low, Medium, High or Critical)" ;;
+  esac
+fi
+
 set_output path "$path"
 set_output api-url "$api_url"
 set_output comment "$comment"
@@ -72,3 +87,4 @@ set_output soft-fail "$(bool "$soft_fail")"
 set_output verbose "$(bool "${INPUT_VERBOSE:-false}")"
 set_output dry-run-safe "$(bool "$dry_safe")"
 set_output dry-run-malicious "$(bool "$dry_malicious")"
+set_output fail-on "$fail_on"
