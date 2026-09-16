@@ -184,6 +184,48 @@ Critical
   done
 )
 
+echo "install-cli.sh"
+# A pinned CLI that predates --fail-on must say so before the catalogue rather
+# than dying later on "unknown flag" and reporting it as a failed scan.
+(
+  stub="$workdir/stub"
+  mkdir -p "$stub"
+  cat >"$stub/old" <<'STUB'
+#!/usr/bin/env bash
+[ "$1" = "--version" ] && { echo "ossprey v0.17.0"; exit 0; }
+[ "$1" = "scan" ] && [ "$2" = "--help" ] && { echo "  --report string"; exit 0; }
+exit 0
+STUB
+  cat >"$stub/new" <<'STUB'
+#!/usr/bin/env bash
+[ "$1" = "--version" ] && { echo "ossprey v0.21.0"; exit 0; }
+[ "$1" = "scan" ] && [ "$2" = "--help" ] && { echo "  --report string"; echo "  --fail-on string"; exit 0; }
+exit 0
+STUB
+  chmod +x "$stub/old" "$stub/new"
+
+  if OSSPREY_CLI="$stub/old" FAIL_ON="Critical" RUNNER_TEMP="$stub/t1" \
+    "$scripts/install-cli.sh" >/dev/null 2>&1; then
+    fail_test "fail-on on a CLI without the flag is refused" "expected a non-zero exit"
+  else
+    ok "fail-on on a CLI without the flag is refused"
+  fi
+
+  if OSSPREY_CLI="$stub/old" RUNNER_TEMP="$stub/t2" \
+    "$scripts/install-cli.sh" >/dev/null 2>&1; then
+    ok "the same CLI still installs when fail-on is unset"
+  else
+    fail_test "the same CLI still installs when fail-on is unset" "expected exit 0"
+  fi
+
+  if OSSPREY_CLI="$stub/new" FAIL_ON="Critical" RUNNER_TEMP="$stub/t3" \
+    "$scripts/install-cli.sh" >/dev/null 2>&1; then
+    ok "fail-on on a CLI that carries the flag is accepted"
+  else
+    fail_test "fail-on on a CLI that carries the flag is accepted" "expected exit 0"
+  fi
+)
+
 echo "summary.sh"
 (
   out="$workdir/out5"

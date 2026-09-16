@@ -163,6 +163,7 @@ runs:
       run: "$GITHUB_ACTION_PATH/scripts/install-cli.sh"
       env:
         CLI_VERSION: ${{ inputs.cli-version }}
+        FAIL_ON: ${{ steps.config.outputs.fail-on }}
 
     - name: Scan for malware
       id: scan
