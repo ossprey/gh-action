@@ -68,9 +68,16 @@ fi
 # Validated here rather than left to the CLI: a typo should fail in a second,
 # before the install and the catalogue, and with a message naming the input.
 # Canonicalised too, so the value the CLI records is the one we document.
+#
+# Surrounding whitespace only, never internal: deleting all of it would accept
+# "M e d i u m" as Medium and silently set a threshold nobody wrote. Matches
+# Go's strings.TrimSpace, TypeScript's .trim() and Python's .strip(), which is
+# what the other surfaces grade with.
 fail_on=""
 if [ -n "${INPUT_FAIL_ON:-}" ]; then
-  case "$(printf '%s' "$INPUT_FAIL_ON" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')" in
+  trimmed="${INPUT_FAIL_ON#"${INPUT_FAIL_ON%%[![:space:]]*}"}"
+  trimmed="${trimmed%"${trimmed##*[![:space:]]}"}"
+  case "$(printf '%s' "$trimmed" | tr '[:upper:]' '[:lower:]')" in
     info) fail_on="Info" ;;
     low) fail_on="Low" ;;
     medium) fail_on="Medium" ;;

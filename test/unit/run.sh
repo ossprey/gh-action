@@ -155,6 +155,35 @@ echo "resolve-inputs.sh"
   fi
 )
 
+# Surrounding whitespace is noise; internal whitespace is a different word.
+# Deleting all of it would accept "M e d i u m" and set a threshold nobody wrote.
+(
+  out="$workdir/out9"
+  for bad in "M e d i u m" "Cri tical" "  I n f o"; do
+    : >"$out"
+    if GITHUB_OUTPUT="$out" INPUT_FAIL_ON="$bad" "$scripts/resolve-inputs.sh" >/dev/null 2>&1; then
+      fail_test "fail-on: '$bad' is rejected" "expected a non-zero exit"
+    else
+      ok "fail-on: '$bad' is rejected"
+    fi
+  done
+)
+
+(
+  out="$workdir/out10"
+  for good in " High " "	Low	" "
+Critical
+"; do
+    : >"$out"
+    GITHUB_OUTPUT="$out" INPUT_FAIL_ON="$good" "$scripts/resolve-inputs.sh" >/dev/null
+    resolved="$(output "$out" fail-on)"
+    case "$resolved" in
+      High | Low | Critical) ok "fail-on: surrounding whitespace trimmed to $resolved" ;;
+      *) fail_test "fail-on: surrounding whitespace trimmed" "got '$resolved'" ;;
+    esac
+  done
+)
+
 echo "summary.sh"
 (
   out="$workdir/out5"

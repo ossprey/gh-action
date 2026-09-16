@@ -111,9 +111,9 @@ inputs:
 outputs:
   verdict:
     description: >-
-      "clean", "malware", "informational" (only findings below your account's
-      failing severity floor — reported, build not failed), "skipped"
-      (quota exhausted — nothing
+      "clean", "malware", "informational" (only findings below the floor this run
+      was graded at, which is your account's unless `fail-on` overrode it —
+      reported, build not failed), "skipped" (quota exhausted — nothing
       was checked), "disabled" (OSSPREY_SKIP_CI / OSSPREY_CI_CACHE_SCAN_ONLY —
       nothing was checked, build not failed) or "error" (the scan did not
       complete).
