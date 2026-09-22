@@ -57,6 +57,18 @@ for the flag itself rather than comparing versions — a hardcoded floor is one
 more number to keep in sync with a cadence this repo does not control — and
 says so plainly rather than letting the scan die on "unknown flag".
 
+### Which client is this?
+
+The action also names itself for the service's client-version metric:
+`scripts/scan.sh` sets `OSSPREY_CLIENT=gh-action` on the CLI invocation, and a CLI
+from the release that added `X-Ossprey-Client` / `X-Ossprey-Client-Version`
+reports that name together with its own version. A submission from here is
+therefore attributable to this action plus the CLI version it installed, and the
+service counts anything older as `unknown` — the action never has to know or
+hardcode a version, and must not try to: it cannot see its own ref
+(`github.action_ref` is unreliable inside a composite action), which is exactly
+why the CLI carries the version half of the pair.
+
 When no report was written at all the action supplies a verdict of its own,
 choosing between two by the CLI's exit code: `disabled` on exit 0 (a deliberate
 no-verdict mode — `--skip-ci` / `--ci-cache-scan-only` or their env vars) and

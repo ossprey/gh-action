@@ -49,7 +49,11 @@ is_true "${DRY_RUN_SAFE:-}" && args+=(--dry-run-safe)
 is_true "${DRY_RUN_MALICIOUS:-}" && args+=(--dry-run-malicious)
 [ -n "${SBOM_PATH:-}" ] && args+=(-o "$SBOM_PATH")
 
-OSSPREY_API_KEY="$key" ossprey "${args[@]}"
+# OSSPREY_CLIENT names this wrapper for the API's client-version metric. The CLI
+# reports its own version alongside it, so a run here reads as gh-action/<cli
+# version> instead of as an unidentified CLI. Nothing to do for an older CLI:
+# it sends no header and the submission counts as unknown.
+OSSPREY_API_KEY="$key" OSSPREY_CLIENT=gh-action ossprey "${args[@]}"
 code=$?
 
 # The CLI writes the report before exiting non-zero on malware, so a missing
