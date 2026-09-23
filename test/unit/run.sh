@@ -117,6 +117,115 @@ echo "resolve-inputs.sh"
   fi
 )
 
+# An empty fail-on means the account's own floor applies, which is the common
+# case and must not turn into a flag the CLI then treats as an override.
+(
+  out="$workdir/out5"
+  : >"$out"
+  GITHUB_OUTPUT="$out" "$scripts/resolve-inputs.sh" >/dev/null
+  assert_eq "fail-on: unset stays empty" "$(output "$out" fail-on)" ""
+)
+
+(
+  out="$workdir/out6"
+  : >"$out"
+  GITHUB_OUTPUT="$out" INPUT_FAIL_ON="  critical " "$scripts/resolve-inputs.sh" >/dev/null
+  assert_eq "fail-on: canonicalised" "$(output "$out" fail-on)" "Critical"
+)
+
+# Every level, in both directions from the default: OSS-1990 retired the rule
+# that the floor could only ever be lowered.
+(
+  out="$workdir/out7"
+  : >"$out"
+  for level in Info Low Medium High Critical; do
+    : >"$out"
+    GITHUB_OUTPUT="$out" INPUT_FAIL_ON="$level" "$scripts/resolve-inputs.sh" >/dev/null
+    assert_eq "fail-on: $level accepted" "$(output "$out" fail-on)" "$level"
+  done
+)
+
+(
+  out="$workdir/out8"
+  : >"$out"
+  if GITHUB_OUTPUT="$out" INPUT_FAIL_ON="Bananas" "$scripts/resolve-inputs.sh" >/dev/null 2>&1; then
+    fail_test "invalid fail-on is rejected" "expected a non-zero exit"
+  else
+    ok "invalid fail-on is rejected"
+  fi
+)
+
+# Surrounding whitespace is noise; internal whitespace is a different word.
+# Deleting all of it would accept "M e d i u m" and set a threshold nobody wrote.
+(
+  out="$workdir/out9"
+  for bad in "M e d i u m" "Cri tical" "  I n f o"; do
+    : >"$out"
+    if GITHUB_OUTPUT="$out" INPUT_FAIL_ON="$bad" "$scripts/resolve-inputs.sh" >/dev/null 2>&1; then
+      fail_test "fail-on: '$bad' is rejected" "expected a non-zero exit"
+    else
+      ok "fail-on: '$bad' is rejected"
+    fi
+  done
+)
+
+(
+  out="$workdir/out10"
+  for good in " High " "	Low	" "
+Critical
+"; do
+    : >"$out"
+    GITHUB_OUTPUT="$out" INPUT_FAIL_ON="$good" "$scripts/resolve-inputs.sh" >/dev/null
+    resolved="$(output "$out" fail-on)"
+    case "$resolved" in
+      High | Low | Critical) ok "fail-on: surrounding whitespace trimmed to $resolved" ;;
+      *) fail_test "fail-on: surrounding whitespace trimmed" "got '$resolved'" ;;
+    esac
+  done
+)
+
+echo "install-cli.sh"
+# A pinned CLI that predates --fail-on must say so before the catalogue rather
+# than dying later on "unknown flag" and reporting it as a failed scan.
+(
+  stub="$workdir/stub"
+  mkdir -p "$stub"
+  cat >"$stub/old" <<'STUB'
+#!/usr/bin/env bash
+[ "$1" = "--version" ] && { echo "ossprey v0.17.0"; exit 0; }
+[ "$1" = "scan" ] && [ "$2" = "--help" ] && { echo "  --report string"; exit 0; }
+exit 0
+STUB
+  cat >"$stub/new" <<'STUB'
+#!/usr/bin/env bash
+[ "$1" = "--version" ] && { echo "ossprey v0.21.0"; exit 0; }
+[ "$1" = "scan" ] && [ "$2" = "--help" ] && { echo "  --report string"; echo "  --fail-on string"; exit 0; }
+exit 0
+STUB
+  chmod +x "$stub/old" "$stub/new"
+
+  if OSSPREY_CLI="$stub/old" FAIL_ON="Critical" RUNNER_TEMP="$stub/t1" \
+    "$scripts/install-cli.sh" >/dev/null 2>&1; then
+    fail_test "fail-on on a CLI without the flag is refused" "expected a non-zero exit"
+  else
+    ok "fail-on on a CLI without the flag is refused"
+  fi
+
+  if OSSPREY_CLI="$stub/old" RUNNER_TEMP="$stub/t2" \
+    "$scripts/install-cli.sh" >/dev/null 2>&1; then
+    ok "the same CLI still installs when fail-on is unset"
+  else
+    fail_test "the same CLI still installs when fail-on is unset" "expected exit 0"
+  fi
+
+  if OSSPREY_CLI="$stub/new" FAIL_ON="Critical" RUNNER_TEMP="$stub/t3" \
+    "$scripts/install-cli.sh" >/dev/null 2>&1; then
+    ok "fail-on on a CLI that carries the flag is accepted"
+  else
+    fail_test "fail-on on a CLI that carries the flag is accepted" "expected exit 0"
+  fi
+)
+
 echo "summary.sh"
 (
   out="$workdir/out5"

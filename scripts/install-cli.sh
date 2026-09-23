@@ -20,6 +20,17 @@ check_report_support() {
   fi
 }
 
+# Only when this workflow actually sets fail-on. Probed for the same reason as
+# --report, and checked here rather than at scan time so a pinned CLI that
+# cannot honour the override says so before the catalogue instead of dying on
+# "unknown flag" and being reported as a failed scan.
+check_fail_on_support() {
+  [ -n "${FAIL_ON:-}" ] || return 0
+  if ! ossprey scan --help 2>&1 | grep -q -- '--fail-on'; then
+    die "This workflow sets fail-on: ${FAIL_ON}, but the pinned Ossprey CLI has no --fail-on flag. Leave cli-version at 'latest', pin a release that carries the flag, or drop the fail-on input to grade at your account's floor."
+  fi
+}
+
 if [ "${RUNNER_OS:-Linux}" = "Windows" ]; then
   die "This action needs a Linux or macOS runner. On Windows, install the CLI with install.ps1 and run 'ossprey scan' directly — see https://github.com/ossprey/ossprey-cli#one-liner-windows-powershell"
 fi
@@ -39,6 +50,7 @@ if [ -n "${OSSPREY_CLI:-}" ]; then
   echo "Using the Ossprey CLI at $OSSPREY_CLI"
   ossprey --version
   check_report_support
+  check_fail_on_support
   exit 0
 fi
 
@@ -95,3 +107,4 @@ export PATH="$install_dir:$PATH"
 ossprey --version
 
 check_report_support
+check_fail_on_support

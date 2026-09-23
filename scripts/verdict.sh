@@ -28,8 +28,10 @@ case "$verdict" in
     exit 0
     ;;
   informational)
-    # Reported, deliberately not failed: the finding is below the severity floor
-    # the CLI fails on. Warning rather than silence, because something was found.
+    # Reported, deliberately not failed: the finding is below the failing
+    # severity floor this scan was graded at, which is the account's setting
+    # unless `fail-on` overrode it. Warning rather than silence, because
+    # something was found.
     warn "Ossprey found $info_count informational finding(s) — see the job summary. Nothing blocking."
     exit 0
     ;;
