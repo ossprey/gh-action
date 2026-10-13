@@ -36,8 +36,8 @@
        without either pin, so bump both together -- copy the values from
        ossprey/devcontainer's Dockerfile. */
     "containerEnv": {
-        "OSSPREY_CLI_VERSION": "v0.17.0",
-        "OSSPREY_CLI_SHA256": "bb3203c44b4ea50cceb91f8edcea8574be763e85030380206140e4d02cd604e8",
+        "OSSPREY_CLI_VERSION": "v0.31.1",
+        "OSSPREY_CLI_SHA256": "e984c1aa8e2b333fcc47c891cfc69f3de87c83d389d32c60dcd5a45dc006887c",
         "OSSPREY_SHIM_DIR": "/usr/local/ossprey/shims",
         "OSSPREY_CI_CACHE_SCAN_ONLY": "1"
     },
