@@ -115,7 +115,6 @@ new enough.
 | `verdict` | `clean`, `malware`, `informational`, `skipped`, `disabled` or `error`. |
 | `findings-count` | Number of malicious packages. |
 | `informational-count` | Number of informational findings. |
-| `unscanned` | Number of dependencies a completed scan did not analyse, `0` when it covered them all. Read `verdict` first. |
 | `findings` | The malicious packages, as a compact JSON array. |
 | `report` | Path to the JSON report from `ossprey scan --report`. |
 | `summary` | The verdict as Markdown — the same text posted to the pull request. |
@@ -124,8 +123,7 @@ new enough.
 nothing at or above the failing severity floor — for example a package npm has
 since removed for malware, where there is no longer any code to install.
 The job passes and the summary lists what was found. Unlike `skipped` this
-verdict means the scan ran; `unscanned` says how many dependencies it could
-not analyse.
+verdict does mean the scan ran.
 
 `skipped` means **nothing was checked**, because your Ossprey quota was
 exhausted or nothing in the project is in an ecosystem Ossprey scans. It is not
@@ -161,8 +159,6 @@ read the verdict and fail on it yourself:
 
 Only `skipped` and `disabled` need this. `malware` and `error` (the scan did not
 complete at all) already fail the job unless you set `soft-fail: true`.
-A workflow that needs every dependency analysed can also fail on
-`steps.ossprey.outputs.unscanned != '0'`.
 
 While you are hardening: pin `cli-version` to a release rather than leaving it
 at `latest`, so the binary a run downloads is the one you last reviewed. The

@@ -125,12 +125,6 @@ outputs:
   informational-count:
     description: "Number of informational findings — reported, but not a reason to fail."
     value: ${{ steps.scan.outputs.informational-count }}
-  unscanned:
-    description: >-
-      Number of dependencies a completed scan did not analyse, 0 when it
-      covered them all. On "skipped", "disabled" or "error" nothing was
-      analysed whatever this says, so read the verdict first.
-    value: ${{ steps.scan.outputs.unscanned }}
   findings:
     description: "The malicious packages, as a compact JSON array."
     value: ${{ steps.scan.outputs.findings }}

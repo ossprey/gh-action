@@ -346,7 +346,7 @@ echo "summary.sh"
   assert_not_contains "clean: full coverage says nothing about unanalysed" "$md" "not analysed"
 )
 
-# A clean scan that skipped some dependencies must not read as full coverage.
+# A clean scan that did not analyse some dependencies must not read as full coverage.
 (
   out="$workdir/out6u"
   : >"$out"

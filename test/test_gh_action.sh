@@ -76,7 +76,7 @@ printf 'findings       = %s\n' "$(out findings)"
 
 step "Verdict"
 VERDICT="$(out verdict)" FINDINGS_COUNT="$(out findings-count)" \
-  EXIT_CODE="$(out exit-code)" "$root/scripts/verdict.sh" ||
+  UNSCANNED="$(out unscanned)" EXIT_CODE="$(out exit-code)" "$root/scripts/verdict.sh" ||
   echo "(the step would fail the job here — expected in dry-run-malicious mode)"
 
 # The comment step is not exercised here: it needs a real pull request and a
