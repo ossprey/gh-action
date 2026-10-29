@@ -1,0 +1,10 @@
+{
+  "verdict": "skipped",
+  "project": "acme-rust-app",
+  "path": "/github/workspace/acme-rust-app",
+  "components": 7,
+  "findings": [],
+  "skipped": {
+    "message": "Scan skipped: nothing in this project is in an ecosystem Ossprey scans"
+  }
+}

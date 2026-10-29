@@ -123,11 +123,12 @@ new enough.
 nothing at or above the failing severity floor — for example a package npm has
 since removed for malware, where there is no longer any code to install.
 The job passes and the summary lists what was found. Unlike `skipped` this
-verdict does mean the scan ran and checked everything.
+verdict does mean the scan ran.
 
-`skipped` means your Ossprey quota was exhausted and **nothing was checked**.
-It is not a clean verdict; the job passes (a quota limit shouldn't break your
-build) but the summary says so plainly.
+`skipped` means **nothing was checked**, because your Ossprey quota was
+exhausted or nothing in the project is in an ecosystem Ossprey scans. It is not
+a clean verdict; the job passes (neither should break your build) but the
+summary says so plainly.
 
 `disabled` means the CLI was told not to produce a verdict — `OSSPREY_SKIP_CI`
 (no scan at all) or `OSSPREY_CI_CACHE_SCAN_ONLY` (submitted to the dashboard,
@@ -138,7 +139,8 @@ switch did it, so a green run is never mistaken for a scanned one.
 ### Failing closed
 
 The default is fail-open on `skipped`, because a quota limit is a billing
-problem and shouldn't stop a team merging. If you would rather a scan that
+problem and a project with nothing Ossprey scans has nothing to check, and
+neither should stop a team merging. If you would rather a scan that
 checked nothing block the merge — reasonable if this action gates a release —
 read the verdict and fail on it yourself:
 

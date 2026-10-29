@@ -226,6 +226,42 @@ STUB
   fi
 )
 
+echo "scan.sh"
+# The stub CLI writes $FIXTURE as its report, or no report when FIXTURE is unset.
+(
+  stub="$workdir/scanstub"
+  mkdir -p "$stub"
+  cat >"$stub/ossprey" <<'STUB'
+#!/usr/bin/env bash
+while [ $# -gt 0 ]; do
+  [ "$1" = "--report" ] && [ -n "${FIXTURE:-}" ] && cp "$FIXTURE" "$2"
+  shift
+done
+exit 0
+STUB
+  chmod +x "$stub/ossprey"
+
+  out="$workdir/scan1"
+  : >"$out"
+  PATH="$stub:$PATH" FIXTURE="$fixtures/report-clean-unscanned.json" RUNNER_TEMP="$stub" \
+    GITHUB_OUTPUT="$out" INPUT_API_KEY=x "$scripts/scan.sh" >/dev/null 2>&1
+  assert_eq "unscanned: verdict" "$(output "$out" verdict)" "clean"
+  assert_eq "unscanned: read from the report" "$(output "$out" unscanned)" "2"
+
+  out="$workdir/scan2"
+  : >"$out"
+  PATH="$stub:$PATH" FIXTURE="$fixtures/report-clean.json" RUNNER_TEMP="$stub" \
+    GITHUB_OUTPUT="$out" INPUT_API_KEY=x "$scripts/scan.sh" >/dev/null 2>&1
+  assert_eq "unscanned: 0 when the report omits it" "$(output "$out" unscanned)" "0"
+
+  out="$workdir/scan3"
+  : >"$out"
+  PATH="$stub:$PATH" RUNNER_TEMP="$stub" \
+    GITHUB_OUTPUT="$out" INPUT_API_KEY=x "$scripts/scan.sh" >/dev/null 2>&1
+  assert_eq "no report: verdict disabled" "$(output "$out" verdict)" "disabled"
+  assert_eq "no report: unscanned 0" "$(output "$out" unscanned)" "0"
+)
+
 echo "summary.sh"
 (
   out="$workdir/out5"
@@ -307,6 +343,21 @@ echo "summary.sh"
   md="$(output "$out" markdown)"
   assert_contains "clean: heading" "$md" "no malware found"
   assert_contains "clean: component count" "$md" "Scanned 7 dependencies"
+  assert_not_contains "clean: full coverage says nothing about unanalysed" "$md" "not analysed"
+)
+
+# A clean scan that did not analyse some dependencies must not read as full coverage.
+(
+  out="$workdir/out6u"
+  : >"$out"
+  RUNNER_TEMP="$workdir" GITHUB_OUTPUT="$out" \
+    VERDICT="clean" REPORT="$fixtures/report-clean-unscanned.json" SCAN_PATH="." \
+    "$scripts/summary.sh" >/dev/null
+  md="$(output "$out" markdown)"
+  assert_contains "clean/unscanned: heading" "$md" "no malware found"
+  assert_contains "clean/unscanned: scanned of total" "$md" "Scanned 5 of 7 dependencies"
+  assert_contains "clean/unscanned: names the gap" "$md" "2 were not analysed"
+  assert_not_contains "clean/unscanned: never claims all were scanned" "$md" "Scanned 7 dependencies"
 )
 
 # A quota skip checked nothing. Rendering it as "clean" would be a lie the
@@ -323,6 +374,20 @@ echo "summary.sh"
   assert_contains "skipped: reset time" "$md" "Quota resets at 2026-09-01T00:00:00Z."
   assert_contains "skipped: not a clean verdict" "$md" "Nothing was checked"
   assert_not_contains "skipped: never says clean" "$md" "no malware found"
+)
+
+(
+  out="$workdir/out7u"
+  : >"$out"
+  RUNNER_TEMP="$workdir" GITHUB_OUTPUT="$out" \
+    VERDICT="skipped" REPORT="$fixtures/report-skipped-unscannable.json" SCAN_PATH="." \
+    "$scripts/summary.sh" >/dev/null
+  md="$(output "$out" markdown)"
+  assert_contains "skipped/unscannable: heading" "$md" "scan skipped"
+  assert_contains "skipped/unscannable: reason" "$md" "nothing in this project is in an ecosystem Ossprey scans"
+  assert_contains "skipped/unscannable: not a clean verdict" "$md" "Nothing was checked"
+  assert_not_contains "skipped/unscannable: no quota reset" "$md" "Quota resets"
+  assert_not_contains "skipped/unscannable: never says clean" "$md" "no malware found"
 )
 
 (
@@ -364,6 +429,19 @@ echo "verdict.sh"
 (
   VERDICT="clean" "$scripts/verdict.sh" >/dev/null 2>&1
   assert_eq "clean exits 0" "$?" "0"
+)
+(
+  log="$(VERDICT="clean" "$scripts/verdict.sh" 2>&1)"
+  assert_contains "clean log: found no malware" "$log" "found no malware"
+  assert_not_contains "clean log: full coverage says nothing about unanalysed" "$log" "not analysed"
+)
+(
+  log="$(VERDICT="clean" UNSCANNED=2 "$scripts/verdict.sh" 2>&1)"
+  assert_eq "clean with unscanned exits 0" "$?" "0"
+  assert_contains "clean with unscanned names the gap" "$log" "2 dependencies were not analysed"
+  assert_not_contains "clean with unscanned is not an annotation" "$log" "::"
+  log="$(VERDICT="clean" UNSCANNED=1 "$scripts/verdict.sh" 2>&1)"
+  assert_contains "clean with one unscanned is singular" "$log" "1 dependency was not analysed"
 )
 (
   # A quota skip is not the user's fault and must not fail their build.
