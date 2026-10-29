@@ -1,0 +1,8 @@
+{
+  "verdict": "skipped",
+  "components": 0,
+  "findings": [],
+  "skipped": {
+    "message": "Scan skipped: nothing in this project is in an ecosystem Ossprey scans"
+  }
+}

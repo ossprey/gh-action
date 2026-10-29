@@ -113,7 +113,8 @@ outputs:
     description: >-
       "clean", "malware", "informational" (only findings below the floor this run
       was graded at, which is your account's unless `fail-on` overrode it —
-      reported, build not failed), "skipped" (quota exhausted — nothing
+      reported, build not failed), "skipped" (the quota was exhausted, or
+      nothing in the project is in an ecosystem Ossprey scans, so nothing
       was checked), "disabled" (OSSPREY_SKIP_CI / OSSPREY_CI_CACHE_SCAN_ONLY —
       nothing was checked, build not failed) or "error" (the scan did not
       complete).
@@ -124,6 +125,12 @@ outputs:
   informational-count:
     description: "Number of informational findings — reported, but not a reason to fail."
     value: ${{ steps.scan.outputs.informational-count }}
+  unscanned:
+    description: >-
+      Number of dependencies a completed scan did not analyse, 0 when it
+      covered them all. On "skipped", "disabled" or "error" nothing was
+      analysed whatever this says, so read the verdict first.
+    value: ${{ steps.scan.outputs.unscanned }}
   findings:
     description: "The malicious packages, as a compact JSON array."
     value: ${{ steps.scan.outputs.findings }}
@@ -210,5 +217,6 @@ runs:
         VERDICT: ${{ steps.scan.outputs.verdict }}
         FINDINGS_COUNT: ${{ steps.scan.outputs.findings-count }}
         INFORMATIONAL_COUNT: ${{ steps.scan.outputs.informational-count }}
+        UNSCANNED: ${{ steps.scan.outputs.unscanned }}
         EXIT_CODE: ${{ steps.scan.outputs.exit-code }}
         SOFT_FAIL: ${{ steps.config.outputs.soft-fail }}

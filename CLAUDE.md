@@ -48,8 +48,9 @@ OSSPREY_CLI=/path/to/ossprey ./test/test_gh_action.sh # against a local CLI buil
 
 The CLI is the contract. `scripts/scan.sh` runs `ossprey scan --report <file>`
 and everything downstream reads that JSON: `verdict` (`clean` / `malware` /
-`informational` / `skipped`), `components`, and `findings[]` pre-split into
-`purl`, `name`, `version`, `ecosystem`, `description`. **The action grades
+`informational` / `skipped`), `components`, `unscanned` (omitted when 0), and
+`findings[]` pre-split into `purl`, `name`, `version`, `ecosystem`,
+`description`. **The action grades
 nothing itself** — which findings fail is decided by the CLI against the
 account's failing severity floor, served on the scan response (OSS-1994). The
 `fail-on` input is passed straight through to `--fail-on` and validated here
@@ -93,8 +94,9 @@ Things that are the way they are on purpose:
   and always exits 0; `verdict.sh` decides the exit status at the end. If the
   scan step failed the job directly, the pull-request comment would never be
   posted on the runs that most need it.
-- **`skipped` is not `clean`.** A quota-exhausted scan checked nothing. It
-  exits 0 (a quota limit must not break someone's build) but the summary says
+- **`skipped` is not `clean`.** A scan skipped for an exhausted quota, or
+  because nothing in the project is in an ecosystem Ossprey scans, checked
+  nothing. It exits 0 (neither must break someone's build) but the summary says
   so, and nothing may render it as "no malware found". `disabled` is the same
   bargain for a deliberate no-scan, and its summary names the switch
   responsible so a green run is never mistaken for a scanned one.

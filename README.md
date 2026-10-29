@@ -115,6 +115,7 @@ new enough.
 | `verdict` | `clean`, `malware`, `informational`, `skipped`, `disabled` or `error`. |
 | `findings-count` | Number of malicious packages. |
 | `informational-count` | Number of informational findings. |
+| `unscanned` | Number of dependencies a completed scan did not analyse, `0` when it covered them all. Read `verdict` first. |
 | `findings` | The malicious packages, as a compact JSON array. |
 | `report` | Path to the JSON report from `ossprey scan --report`. |
 | `summary` | The verdict as Markdown — the same text posted to the pull request. |
@@ -123,11 +124,13 @@ new enough.
 nothing at or above the failing severity floor — for example a package npm has
 since removed for malware, where there is no longer any code to install.
 The job passes and the summary lists what was found. Unlike `skipped` this
-verdict does mean the scan ran and checked everything.
+verdict means the scan ran; `unscanned` says how many dependencies it could
+not analyse.
 
-`skipped` means your Ossprey quota was exhausted and **nothing was checked**.
-It is not a clean verdict; the job passes (a quota limit shouldn't break your
-build) but the summary says so plainly.
+`skipped` means **nothing was checked**, because your Ossprey quota was
+exhausted or nothing in the project is in an ecosystem Ossprey scans. It is not
+a clean verdict; the job passes (neither should break your build) but the
+summary says so plainly.
 
 `disabled` means the CLI was told not to produce a verdict — `OSSPREY_SKIP_CI`
 (no scan at all) or `OSSPREY_CI_CACHE_SCAN_ONLY` (submitted to the dashboard,
@@ -138,7 +141,8 @@ switch did it, so a green run is never mistaken for a scanned one.
 ### Failing closed
 
 The default is fail-open on `skipped`, because a quota limit is a billing
-problem and shouldn't stop a team merging. If you would rather a scan that
+problem and a project with nothing Ossprey scans has nothing to check, and
+neither should stop a team merging. If you would rather a scan that
 checked nothing block the merge — reasonable if this action gates a release —
 read the verdict and fail on it yourself:
 
@@ -157,6 +161,8 @@ read the verdict and fail on it yourself:
 
 Only `skipped` and `disabled` need this. `malware` and `error` (the scan did not
 complete at all) already fail the job unless you set `soft-fail: true`.
+A workflow that needs every dependency analysed can also fail on
+`steps.ossprey.outputs.unscanned != '0'`.
 
 While you are hardening: pin `cli-version` to a release rather than leaving it
 at `latest`, so the binary a run downloads is the one you last reviewed. The
