@@ -1,0 +1,8 @@
+{
+  "verdict": "clean",
+  "project": "acme-rust-app",
+  "path": "/github/workspace/acme-rust-app",
+  "components": 7,
+  "unscanned": 2,
+  "findings": []
+}
