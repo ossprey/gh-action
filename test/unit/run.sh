@@ -184,6 +184,46 @@ Critical
   done
 )
 
+(
+  out="$workdir/out11"
+  : >"$out"
+  GITHUB_OUTPUT="$out" "$scripts/resolve-inputs.sh" >/dev/null
+  assert_eq "strict: defaults to false" "$(output "$out" strict)" "false"
+  : >"$out"
+  GITHUB_OUTPUT="$out" INPUT_STRICT="TRUE" "$scripts/resolve-inputs.sh" >/dev/null
+  assert_eq "strict: TRUE -> true" "$(output "$out" strict)" "true"
+)
+
+echo "scan.sh (missing API key)"
+# Which explanation a missing key gets depends on where the pull request came
+# from: only a fork is withheld the secrets.
+(
+  event="$workdir/event.json"
+  missing_key() {
+    env -u OSSPREY_API_KEY -u API_KEY GITHUB_OUTPUT="$workdir/out-scan" \
+      GITHUB_EVENT_PATH="$event" GITHUB_REPOSITORY="acme/app" "$@" "$scripts/scan.sh" 2>&1
+  }
+  echo '{"pull_request":{"head":{"repo":{"full_name":"someone/app"}}}}' >"$event"
+  log="$(missing_key GITHUB_EVENT_NAME=pull_request GITHUB_ACTOR=someone)"
+  assert_contains "fork PR: fork-secrets message" "$log" "opened from a fork"
+  log="$(missing_key GITHUB_EVENT_NAME=pull_request_target GITHUB_ACTOR=someone)"
+  assert_contains "fork PR (target): secret not set" "$log" "OSSPREY_API_KEY secret is not set"
+  assert_not_contains "fork PR (target): does not blame forks" "$log" "opened from a fork"
+
+  echo '{"pull_request":{"head":{"repo":{"full_name":"acme/app"}}}}' >"$event"
+  log="$(missing_key GITHUB_EVENT_NAME=pull_request GITHUB_ACTOR=octocat)"
+  assert_contains "same-repo PR: secret not set" "$log" "OSSPREY_API_KEY secret is not set"
+  assert_not_contains "same-repo PR: does not blame forks" "$log" "opened from a fork"
+  assert_not_contains "same-repo PR: no Dependabot note" "$log" "Dependabot secrets"
+
+  : >"$workdir/out-scan"
+  log="$(missing_key GITHUB_EVENT_NAME=pull_request "GITHUB_ACTOR=dependabot[bot]")"
+  assert_contains "dependabot PR: secret not set" "$log" "OSSPREY_API_KEY secret is not set"
+  assert_contains "dependabot PR: names Dependabot secrets" "$log" "Dependabot secrets"
+  assert_not_contains "dependabot PR: does not blame forks" "$log" "opened from a fork"
+  assert_eq "missing key: verdict error" "$(output "$workdir/out-scan" verdict)" "error"
+)
+
 echo "install-cli.sh"
 # A pinned CLI that predates --fail-on must say so before the catalogue rather
 # than dying later on "unknown flag" and reporting it as a failed scan.
@@ -406,6 +446,54 @@ echo "verdict.sh"
 (
   log="$(VERDICT="malware" FINDINGS_COUNT=2 "$scripts/verdict.sh" 2>&1)"
   assert_contains "malware annotates the log" "$log" "::error::"
+)
+
+echo "verdict.sh (strict)"
+# report <name> <json> — write a report fixture and print its path.
+report() {
+  printf '%s\n' "$2" >"$workdir/$1.json"
+  echo "$workdir/$1.json"
+}
+# strict_exit <report> <verdict> — the exit status under strict: true.
+strict_exit() {
+  VERDICT="$2" REPORT="$1" STRICT=true EXIT_CODE=1 "$scripts/verdict.sh" >/dev/null 2>&1
+  echo "$?"
+}
+(
+  assert_eq "strict: clean report passes" "$(strict_exit "$fixtures/report-clean.json" clean)" "0"
+  assert_eq "strict: informational passes" \
+    "$(strict_exit "$fixtures/report-informational.json" informational)" "0"
+  assert_eq "strict: skipped fails" "$(strict_exit "$fixtures/report-skipped.json" skipped)" "1"
+  assert_eq "strict: disabled fails" "$(strict_exit "" disabled)" "1"
+  assert_eq "strict: error fails" "$(strict_exit "" error)" "1"
+  assert_eq "strict: malware fails" "$(strict_exit "$fixtures/report-malware.json" malware)" "1"
+
+  zero="$(report zero '{"verdict":"clean","components":0,"findings":[]}')"
+  assert_eq "strict: zero components fails" "$(strict_exit "$zero" clean)" "1"
+  none="$(report none '{"verdict":"clean","components":4,"unscanned":4,"findings":[]}')"
+  assert_eq "strict: unscanned >= components fails" "$(strict_exit "$none" clean)" "1"
+  some="$(report some '{"verdict":"clean","components":4,"unscanned":1,"findings":[]}')"
+  assert_eq "strict: some unscanned passes" "$(strict_exit "$some" clean)" "0"
+  partial="$(report partial '{"verdict":"clean","components":4,"transitive":"partial","findings":[]}')"
+  assert_eq "strict: transitive partial fails" "$(strict_exit "$partial" clean)" "1"
+  full="$(report full '{"verdict":"clean","components":4,"transitive":"complete","findings":[]}')"
+  assert_eq "strict: transitive complete passes" "$(strict_exit "$full" clean)" "0"
+  assert_eq "strict: clean with no report fails" "$(strict_exit "" clean)" "1"
+
+  log="$(VERDICT=clean REPORT="$partial" STRICT=true "$scripts/verdict.sh" 2>&1)"
+  assert_contains "strict: says why" "$log" "transitive dependencies were only partly resolved"
+  assert_not_contains "strict: never claims clean" "$log" "found no malware"
+
+  VERDICT=skipped STRICT=true SOFT_FAIL=true "$scripts/verdict.sh" >/dev/null 2>&1
+  assert_eq "strict: soft-fail still wins" "$?" "0"
+
+  # Non-strict is unchanged by any of it.
+  VERDICT=clean REPORT="$zero" "$scripts/verdict.sh" >/dev/null 2>&1
+  assert_eq "non-strict: zero components passes" "$?" "0"
+  VERDICT=clean REPORT="$partial" STRICT=false "$scripts/verdict.sh" >/dev/null 2>&1
+  assert_eq "non-strict: transitive partial passes" "$?" "0"
+  VERDICT=disabled STRICT=false "$scripts/verdict.sh" >/dev/null 2>&1
+  assert_eq "non-strict: disabled passes" "$?" "0"
 )
 
 echo

@@ -135,9 +135,15 @@ Things that are the way they are on purpose:
   to make a fixture look realistic; the SBOM only needs a component.
 
 - **A missing API key gets an explanation, not a stack trace.** On a
-  `pull_request` run the error is specifically about fork secrets and prints
-  the `if:` guard to add — and says not to reach for `pull_request_target`,
-  which would hand secrets to fork code.
+  pull request from a fork (head repo, read from `GITHUB_EVENT_PATH`, differs
+  from `GITHUB_REPOSITORY`) the error is about fork secrets and prints the
+  `if:` guard to add — and says not to reach for `pull_request_target`, which
+  would hand secrets to fork code. A same-repo pull request is told the secret
+  is not set; a Dependabot one, that it must be a Dependabot secret too.
+- **`strict` is opt-in and only adds failures.** `verdict.sh` fails
+  `skipped` / `disabled`, and a passing verdict whose report shows
+  `components` 0, `unscanned` >= `components` or `transitive: "partial"`.
+  Without it, behaviour is exactly as above. `soft-fail` still wins.
 
 ## CI
 
