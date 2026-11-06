@@ -34,7 +34,8 @@ if [ -z "$key" ] && [ "$dry_run" = false ]; then
   # secrets, so blaming forks there sends people after the wrong fix. A null
   # head repo is a deleted fork.
   fork=false
-  if [ "$is_pr" = true ] && [ -r "${GITHUB_EVENT_PATH:-}" ]; then
+  # pull_request_target gets secrets even from a fork, so only pull_request.
+  if [ "$event" = pull_request ] && [ -r "${GITHUB_EVENT_PATH:-}" ]; then
     head_repo="$(jq -r '.pull_request.head.repo.full_name // ""' "$GITHUB_EVENT_PATH" 2>/dev/null)" &&
       [ "$head_repo" != "${GITHUB_REPOSITORY:-}" ] && fork=true
   fi
