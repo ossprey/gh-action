@@ -111,15 +111,17 @@ new enough.
 
 ## Using as a required check
 
-A required status check should only go green when every dependency was
-actually checked. `strict: true` makes the job fail, rather than pass with a
-warning, when:
+A required status check should not go green on a scan that checked nothing.
+`strict: true` makes the job fail, rather than pass with a warning, when:
 
 - the verdict is `skipped`, `disabled` or `error` (`malware` fails already);
 - the scan found no dependencies (`components` is 0);
 - none of them could be scanned (`unscanned` >= `components`);
 - the report says transitive dependencies were only partly resolved
   (`transitive: "partial"`, from a CLI that reports it).
+
+It does not demand full coverage: a scan where only some packages went
+unscanned (private or unsupported ones) still passes, with a warning.
 
 ```yaml
 jobs:
@@ -147,9 +149,11 @@ If the check is required on Dependabot's pull requests too, add
 `OSSPREY_API_KEY` under *Settings → Secrets and variables → Dependabot* as
 well, or every Dependabot pull request fails for a missing key.
 
-Fork pull requests get no secrets at all, so a required check with the
-`if:` guard from [Usage](#usage) reports as skipped on them; decide whether
-your branch protection should accept that.
+Fork pull requests get no secrets at all, so a job with the `if:` guard from
+[Usage](#usage) is skipped on them, and GitHub counts a skipped job as a
+passing required check. If unscanned fork pull requests must be blocked, use a
+separate gate (for example, require a review before merging fork pull
+requests).
 
 ## Outputs
 
