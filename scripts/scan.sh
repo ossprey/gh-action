@@ -25,12 +25,30 @@ key="${INPUT_API_KEY:-}"
 [ -n "$key" ] || key="${API_KEY:-}"
 
 if [ -z "$key" ] && [ "$dry_run" = false ]; then
-  if [ "${GITHUB_EVENT_NAME:-}" = "pull_request" ]; then
+  event="${GITHUB_EVENT_NAME:-}"
+  case "$event" in
+    pull_request | pull_request_target) is_pr=true ;;
+    *) is_pr=false ;;
+  esac
+  # Fork only when the event says so: a same-repo pull request has the
+  # secrets, so blaming forks there sends people after the wrong fix. A null
+  # head repo is a deleted fork.
+  fork=false
+  if [ "$is_pr" = true ] && [ -r "${GITHUB_EVENT_PATH:-}" ]; then
+    head_repo="$(jq -r '.pull_request.head.repo.full_name // ""' "$GITHUB_EVENT_PATH" 2>/dev/null)" &&
+      [ "$head_repo" != "${GITHUB_REPOSITORY:-}" ] && fork=true
+  fi
+  not_set="No Ossprey API key: the OSSPREY_API_KEY secret is not set, or not passed to this action. Add it under Settings > Secrets and variables > Actions and pass it as the 'api-key' input. Create a key with 'ossprey init' or at https://dashboard.ossprey.com."
+  if [ "$fork" = true ]; then
     error "No Ossprey API key. GitHub withholds repository secrets from pull requests opened from a fork, so this run has none. Guard the job so fork pull requests skip it:
 
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
 
 Do not switch the trigger to pull_request_target to work around this — that hands your secrets to code from the fork."
+  elif [ "$event" = "pull_request" ] && [ "${GITHUB_ACTOR:-}" = "dependabot[bot]" ]; then
+    error "$not_set Dependabot pull requests get Dependabot secrets, not Actions secrets, so OSSPREY_API_KEY must also be added under Settings > Secrets and variables > Dependabot."
+  elif [ "$is_pr" = true ]; then
+    error "$not_set"
   else
     error "No Ossprey API key. Pass one as the 'api-key' input (from a secret), or set OSSPREY_API_KEY on the job. Create a key with 'ossprey init' or at https://dashboard.ossprey.com."
   fi
