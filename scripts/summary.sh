@@ -18,6 +18,7 @@ DASHBOARD='https://dashboard.ossprey.com'
 
 count=0
 components=0
+unscanned=0
 info_count=0
 skip_message=""
 have_report=false
@@ -26,16 +27,12 @@ if [ -n "$report" ] && [ -s "$report" ]; then
   count="$(jq -r '.findings | length' "$report")"
   info_count="$(jq -r '.informational | length' "$report")"
   components="$(jq -r '.components // 0' "$report")"
+  unscanned="$(jq -r '.unscanned // 0' "$report")"
   skip_message="$(jq -r '
     [ .skipped.message // "",
       (if .skipped.reset_at then "Quota resets at " + .skipped.reset_at + "." else "" end)
     ] | map(select(. != "")) | join(" ")' "$report")"
 fi
-
-# plural <count> <singular> <plural>
-plural() {
-  if [ "$1" = "1" ]; then printf '%s' "$2"; else printf '%s' "$3"; fi
-}
 
 body="$MARKER"$'\n'
 case "$verdict" in
@@ -57,7 +54,12 @@ case "$verdict" in
     ;;
   clean)
     body+="## ✅ Ossprey — no malware found"$'\n\n'
-    body+="Scanned $components $(plural "$components" dependency dependencies) in \`$scan_path\`."$'\n'
+    if [ "$unscanned" -gt 0 ]; then
+      scanned=$((components > unscanned ? components - unscanned : 0))
+      body+="Scanned $scanned of $components $(plural "$components" dependency dependencies) in \`$scan_path\`; $unscanned $(plural "$unscanned" was were) not analysed."$'\n'
+    else
+      body+="Scanned $components $(plural "$components" dependency dependencies) in \`$scan_path\`."$'\n'
+    fi
     ;;
   skipped)
     body+="## ⚠️ Ossprey — scan skipped"$'\n\n'
