@@ -38,6 +38,15 @@ inputs:
     description: "Report findings but let the job pass anyway."
     required: false
     default: "false"
+  strict:
+    description: >-
+      Fail closed, for use as a required status check: also fail the job when
+      the verdict is "skipped", "disabled" or "error", when the scan found no
+      dependencies, when none of them could be scanned, or when the report
+      says transitive dependencies were only partly resolved. `soft-fail`
+      still overrides it.
+    required: false
+    default: "false"
   fail-on:
     description: >-
       Fail on findings graded at or above this severity: "Info", "Low",
@@ -151,6 +160,7 @@ runs:
         INPUT_DRY_RUN_SAFE: ${{ inputs.dry-run-safe }}
         INPUT_DRY_RUN_MALICIOUS: ${{ inputs.dry-run-malicious }}
         INPUT_FAIL_ON: ${{ inputs.fail-on }}
+        INPUT_STRICT: ${{ inputs.strict }}
         LEGACY_PACKAGE: ${{ inputs.package }}
         LEGACY_MODE: ${{ inputs.mode }}
         LEGACY_URL: ${{ inputs.url }}
@@ -214,3 +224,5 @@ runs:
         UNSCANNED: ${{ steps.scan.outputs.unscanned }}
         EXIT_CODE: ${{ steps.scan.outputs.exit-code }}
         SOFT_FAIL: ${{ steps.config.outputs.soft-fail }}
+        STRICT: ${{ steps.config.outputs.strict }}
+        REPORT: ${{ steps.scan.outputs.report }}

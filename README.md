@@ -73,6 +73,7 @@ The comment is sticky: the same comment is edited on every run, and flips to
 | `comment` | `on-failure` | Pull-request comment: `always`, `on-failure` (malware or a failed scan), or `never`. |
 | `github-token` | `${{ github.token }}` | Token used to post that comment. |
 | `soft-fail` | `false` | Report findings but let the job pass. |
+| `strict` | `false` | Fail closed, for a required check: also fail on `skipped`, `disabled`, a scan that found or could scan no dependencies, and partly resolved transitive dependencies. See [Using as a required check](#using-as-a-required-check). |
 | `fail-on` | account setting | Fail on findings graded at or above this severity: `Info`, `Low`, `Medium`, `High` or `Critical`. |
 | `sbom` | — | Path to write the full OSSBOM JSON to. |
 | `cli-version` | `latest` | Ossprey CLI version, e.g. `v0.15.0`. Must be a release carrying `scan --report`; `v0.14.0` and earlier predate it. |
@@ -108,6 +109,52 @@ Prefer the account setting when every repository should agree. `fail-on` needs
 a CLI carrying `scan --fail-on`, so leave `cli-version` at `latest` or pin one
 new enough.
 
+## Using as a required check
+
+A required status check should not go green on a scan that checked nothing.
+`strict: true` makes the job fail, rather than pass with a warning, when:
+
+- the verdict is `skipped`, `disabled` or `error` (`malware` fails already);
+- the scan found no dependencies (`components` is 0);
+- none of them could be scanned (`unscanned` >= `components`);
+- the report says transitive dependencies were only partly resolved
+  (`transitive: "partial"`, from a CLI that reports it).
+
+It does not demand full coverage: a scan where only some packages went
+unscanned (private or unsupported ones) still passes, with a warning.
+
+```yaml
+jobs:
+  ossprey:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Pin the action to a full commit SHA, so the code this check runs can't
+      # change under it; keep the tag in a comment for Dependabot.
+      - uses: ossprey/gh-action@<full-commit-sha> # v3.x.y
+        with:
+          api-key: ${{ secrets.OSSPREY_API_KEY }}
+          strict: true
+          # A pinned CLI is the binary you last reviewed, not whatever
+          # `latest` resolves to on the day.
+          cli-version: v0.41.0
+```
+
+Leave `soft-fail` unset: it still overrides `strict`. The CLI download is
+checksum-verified against its release either way, which proves integrity, not
+provenance — pinning both the action and `cli-version` is what fixes what runs.
+
+**Dependabot pull requests** run with Dependabot secrets, not Actions secrets.
+If the check is required on Dependabot's pull requests too, add
+`OSSPREY_API_KEY` under *Settings → Secrets and variables → Dependabot* as
+well, or every Dependabot pull request fails for a missing key.
+
+Fork pull requests get no secrets at all, so a job with the `if:` guard from
+[Usage](#usage) is skipped on them, and GitHub counts a skipped job as a
+passing required check. If unscanned fork pull requests must be blocked, use a
+separate gate (for example, require a review before merging fork pull
+requests).
+
 ## Outputs
 
 | Output | Description |
@@ -138,32 +185,10 @@ switch did it, so a green run is never mistaken for a scanned one.
 
 ### Failing closed
 
-The default is fail-open on `skipped`, because a quota limit is a billing
-problem and a project with nothing Ossprey scans has nothing to check, and
-neither should stop a team merging. If you would rather a scan that
-checked nothing block the merge — reasonable if this action gates a release —
-read the verdict and fail on it yourself:
-
-```yaml
-- uses: ossprey/gh-action@v3.0.0
-  id: ossprey
-  with:
-    api-key: ${{ secrets.OSSPREY_API_KEY }}
-
-- name: Require a completed scan
-  if: contains(fromJSON('["skipped","disabled"]'), steps.ossprey.outputs.verdict)
-  run: |
-    echo "::error::verdict was '${{ steps.ossprey.outputs.verdict }}' — no packages were checked"
-    exit 1
-```
-
-Only `skipped` and `disabled` need this. `malware` and `error` (the scan did not
-complete at all) already fail the job unless you set `soft-fail: true`.
-
-While you are hardening: pin `cli-version` to a release rather than leaving it
-at `latest`, so the binary a run downloads is the one you last reviewed. The
-download is checksum-verified against the same release either way, which
-proves integrity, not provenance.
+The default is fail-open on `skipped` and `disabled`, because a quota limit is
+a billing problem and a rollout switch shouldn't stop a team merging. If you
+would rather a scan that checked nothing block the merge, set `strict: true` —
+see [Using as a required check](#using-as-a-required-check).
 
 Use the outputs to do your own thing with a finding:
 
