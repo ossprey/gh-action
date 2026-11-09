@@ -9,14 +9,19 @@ set -euo pipefail
 verdict="${VERDICT:-error}"
 count="${FINDINGS_COUNT:-0}"
 info_count="${INFORMATIONAL_COUNT:-0}"
+unscanned="${UNSCANNED:-0}"
 
 case "$verdict" in
   clean)
-    echo "✅ Ossprey found no malware."
+    if [ "$unscanned" -gt 0 ]; then
+      echo "✅ Ossprey found no malware, but $unscanned $(plural "$unscanned" dependency dependencies) $(plural "$unscanned" was were) not analysed. See the job summary."
+    else
+      echo "✅ Ossprey found no malware."
+    fi
     exit 0
     ;;
   skipped)
-    # Exit 0 to match the CLI: a quota limit must not fail someone's build.
+    # Exit 0 to match the CLI: a quota limit or a project with nothing scannable must not fail the build.
     # The warning is the whole point — nothing was checked.
     warn "Ossprey scan skipped — nothing was checked on this run."
     exit 0

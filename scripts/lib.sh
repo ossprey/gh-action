@@ -39,6 +39,11 @@ bool() {
   if is_true "${1:-}"; then echo true; else echo false; fi
 }
 
+# plural <count> <singular> <plural>
+plural() {
+  if [ "$1" = "1" ]; then printf '%s' "$2"; else printf '%s' "$3"; fi
+}
+
 # env_enabled mirrors the CLI's own env-var truthiness (ossprey-cli
 # internal/env/ciflags.go: anything but empty/0/false/no/off counts as on),
 # which is deliberately looser than the input spellings is_true accepts.
