@@ -1,5 +1,5 @@
 name: "Ossprey supply-chain malware scan"
-description: "Catalogue your Python/JavaScript dependencies and fail the build if any of them contain malware."
+description: "Catalogue your Python, JavaScript and Rust dependencies and fail the build if any of them contain malware."
 author: "Ossprey"
 
 branding:

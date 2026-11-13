@@ -1,13 +1,14 @@
 # Ossprey GitHub Action
 
-Scan your repository's Python and JavaScript dependencies for supply-chain
-malware on every push and pull request. The action installs the
+Scan your repository's Python, JavaScript and Rust dependencies for
+supply-chain malware on every push and pull request. The action installs the
 [Ossprey CLI](https://github.com/ossprey/ossprey-cli), catalogues the manifests
 and lockfiles already in your repo, checks them against the
 [Ossprey](https://www.ossprey.com) platform, and fails the build if any package
 is known to be malicious.
 
 Nothing is installed or executed from your dependency tree — the scan is static.
+Rust (crates.io) scanning is available on Teams and Enterprise plans.
 
 ## Usage
 
@@ -36,7 +37,7 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v4
-      - uses: ossprey/gh-action@v3.0.0
+      - uses: ossprey/gh-action@v3
         with:
           api-key: ${{ secrets.OSSPREY_API_KEY }}
 ```
@@ -193,7 +194,7 @@ see [Using as a required check](#using-as-a-required-check).
 Use the outputs to do your own thing with a finding:
 
 ```yaml
-- uses: ossprey/gh-action@v3.0.0
+- uses: ossprey/gh-action@v3
   id: ossprey
   with:
     api-key: ${{ secrets.OSSPREY_API_KEY }}
