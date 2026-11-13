@@ -6,7 +6,7 @@ Guidance for Claude Code (claude.ai/code) working in this repository.
 
 `ossprey/gh-action` is the GitHub Action wrapper around the
 [Ossprey CLI](https://github.com/ossprey/ossprey-cli): it scans a repository's
-Python/JavaScript dependencies for supply-chain malware, fails the build on a
+Python, JavaScript and Rust dependencies for supply-chain malware, fails the build on a
 finding, and posts the malicious packages as a pull-request comment.
 
 It holds no scanning logic of its own. Everything about *what* counts as
@@ -160,5 +160,8 @@ Which CLI source: if a branch of the same name as this pull request's exists in
 half, and falls back to `main` on its own once the CLI side merges. Give the two
 branches the same name and it just works; there is nothing to undo afterwards.
 
-Releases are cut by the manual `tag.yml` workflow. This rewrite is v3 (v2 was
-the Docker/Python action); the README's examples reference `@v3`.
+Releases are cut by the manual `tag.yml` workflow, which tags the version,
+moves the major tag (`v3`) when it is the newest in that major, and creates the
+GitHub release. This rewrite is v3 (v2 was the Docker/Python action); the
+README's examples and the dashboard's snippet reference `@v3`, so that tag must
+exist.
